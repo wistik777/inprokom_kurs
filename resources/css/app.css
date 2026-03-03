@@ -1,0 +1,86 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+}
+
+/* Кнопка с заливкой снизу вверх */
+.btn-fill {
+    @apply relative overflow-hidden border-2 border-[#FA4234] text-[#FA4234] cursor-pointer ;
+    @apply transition-transform duration-300 ease-in-out;
+}
+.btnw-fill {
+    @apply relative overflow-hidden border-2 border-[#FA4234] text-[#FA4234] cursor-pointer bg-white;
+    @apply transition-transform duration-300 ease-in-out;
+}
+
+
+/* Кнопка-иконка с заливкой с краёв в центр */
+.shape-fill {
+    @apply relative overflow-hidden border-1 border-black cursor-pointer w-[90.75px] h-[90.75px] bg-white flex items-center justify-center p-6;
+}
+
+.shape-fill::before {
+    content: "";
+    @apply absolute inset-0 bg-[#FA4234];
+    @apply scale-0 rounded-full transition-transform duration-500 ease-in-out;
+}
+
+.shape-fill:hover::before {
+    @apply scale-150;
+}
+
+/* SVG внутри кнопки меняет цвет на белый */
+.shape-fill svg {
+    @apply relative z-10;
+}
+
+.shape-fill svg,
+.shape-fill svg * {
+    transition: fill 0.3s ease-in-out, stroke 0.3s ease-in-out;
+}
+
+.shape-fill:hover svg,
+.shape-fill:hover svg * {
+    fill: white !important;
+    stroke: white !important;
+}
+
+.btn-fill::before {
+    content: "";
+    @apply absolute inset-0 bg-[#FA4234];
+    @apply translate-y-full transition-transform duration-300 ease-in-out;
+}
+
+
+
+.btn-fill:hover {
+    @apply text-white;
+}
+
+.btn-fill:hover::before {
+    @apply translate-y-0;
+}
+
+.btnw-fill:hover::before {
+    @apply translate-y-0;
+}
+
+.btnw-fill:hover {
+    transform: translateY(-4px);
+}
+.btn-fill:hover {
+    transform: translateY(-4px);
+}
