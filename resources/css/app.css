@@ -18,7 +18,7 @@ body {
 
 /* Кнопка с заливкой снизу вверх */
 .btn-fill {
-    @apply relative overflow-hidden border-2 border-[#FA4234] text-[#FA4234] cursor-pointer ;
+    @apply relative overflow-hidden border-2 border-[#FA4234] text-[#FA4234] cursor-pointer  bg-white;
     @apply transition-transform duration-300 ease-in-out;
 }
 .btnw-fill {

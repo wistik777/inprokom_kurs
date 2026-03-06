@@ -11,7 +11,8 @@ const Auth = () =>{
                     <h1 className="text-[40px]  mt-[30%] font-medium">Войти</h1>
                     <div className="flex flex-col
                     [&_input]:w-[335px] [&_input]:h-[55px] [&_input]:border-solid [&_input]:border-[#FA4234] [&_input]:border-2 [&_input]:text-[20px] [&_input]:pl-[27px]
-                    gap-8 ml-[42px] mr-[56px] mt-[5%]">
+                    gap-8 ml-[42px] mr-[56px] mt-[5%]
+                    [&_input:hover]:border-4 [&_input]:transition-all [&_input]:duration-30 [&_input]:ease-in-out">
                         <input type="text" className="" name="login" placeholder="Логин" required/>
                         {errors.login && <p className="text-red-500 text-sm">{errors.login[0]}</p>}
                         <input type="password" name="password" placeholder="Пароль" required/>

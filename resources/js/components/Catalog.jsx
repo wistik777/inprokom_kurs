@@ -160,7 +160,7 @@ const Catalog = ({ products }) => {
                         {selectedGenre ? `Все товары: ${selectedGenre}` : 'Все товары'}
                     </h2>
 
-                    <div className="mb-6 flex items-center justify-between bg-[#efefef] px-6 py-4 mr-[3%]">
+                    <div className="mb-6 flex items-center justify-between bg-white px-0 py-4">
 
                         <div className="flex items-center gap-4">
                             <select

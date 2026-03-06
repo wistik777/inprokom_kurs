@@ -24,6 +24,17 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        User::updateOrCreate(
+            ['login' => 'manager'],
+            [
+                'email' => 'manager@inprokom.local',
+                'password' => 'manager12345',
+                'phone' => '+7(999)-111-11-11',
+                'rule' => 'manager',
+                'role' => false,
+            ]
+        );
+
         $this->call([
             CategorySeeder::class,
             ProductSeeder::class,
