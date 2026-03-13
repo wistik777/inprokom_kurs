@@ -1,22 +1,55 @@
 import React, { useState } from "react";
+import { applyPhoneMask, formatRuPhone } from "../utils/phoneMask";
 
 const Auth = () =>{
-    const [isLogin, setIsLogin] = useState(true)
     const errors = window.errors || {};
+    const oldInput = window.oldInput || {};
+    const loginOldInput = oldInput.auth_form === "login" ? oldInput : {};
+    const registerOldInput = oldInput.auth_form === "register" ? oldInput : {};
+    const forceRegisterFromUrl =
+        typeof window !== "undefined" &&
+        new URLSearchParams(window.location.search).get("form") === "register";
+    const getRegisterFieldValue = (field) => {
+        if (field === "login") {
+            return registerOldInput.login || "";
+        }
+
+        // Пароль не заполняем повторно по соображениям безопасности.
+        if (field === "password") {
+            return "";
+        }
+
+        // Поле с ошибкой очищаем после неудачной валидации.
+        if (errors[field]) {
+            return "";
+        }
+
+        return registerOldInput[field] || "";
+    };
+    const shouldOpenRegister =
+        forceRegisterFromUrl ||
+        oldInput.auth_form === "register" ||
+        Boolean(errors.phone || errors.email || errors.rule);
+    const [isLogin, setIsLogin] = useState(!shouldOpenRegister);
     return(
         <div className="flex justify-center mt-[2%] mb-[7%] relative ">
             <div className={`transition-all duration-500 ${isLogin ? 'opacity-100' : 'opacity-0 pointer-events-none absolute'} flex`}>
                 <form action="/login" method="POST" className="flex flex-col w-[433px] h-[680px] items-center shadow-[0_0_20px_rgba(0,0,0,0.30)]">
                     <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]').content} />
+                    <input type="hidden" name="auth_form" value="login" />
                     <h1 className="text-[40px]  mt-[30%] font-medium">Войти</h1>
                     <div className="flex flex-col
                     [&_input]:w-[335px] [&_input]:h-[55px] [&_input]:border-solid [&_input]:border-[#FA4234] [&_input]:border-2 [&_input]:text-[20px] [&_input]:pl-[27px]
-                    gap-8 ml-[42px] mr-[56px] mt-[5%]
+                    gap-6 ml-[42px] mr-[56px] mt-[5%]
                     [&_input:hover]:border-4 [&_input]:transition-all [&_input]:duration-30 [&_input]:ease-in-out">
-                        <input type="text" className="" name="login" placeholder="Логин" required/>
-                        {errors.login && <p className="text-red-500 text-sm">{errors.login[0]}</p>}
-                        <input type="password" name="password" placeholder="Пароль" required/>
-                        {errors.password && <p className="text-red-500 text-sm">{errors.password[0]}</p>}
+                        <div className="flex flex-col">
+                            <input type="text" className="" name="login" placeholder="Логин" defaultValue={loginOldInput.login || ""} required/>
+                            {errors.login && <p className="text-red-500 text-sm mt-[1px]">{errors.login[0]}</p>}
+                        </div>
+                        <div className="flex flex-col">
+                            <input type="password" name="password" placeholder="Пароль" defaultValue="" required/>
+                            {errors.password && <p className="text-red-500 text-sm mt-[1px]">{errors.password[0]}</p>}
+                        </div>
                     </div>
                     <button type="submit" className="btn-fill w-[197.45px] h-[68.81px] text-[21px] mt-[61px]" >
                         <span className="relative z-10">ВОЙТИ</span>
@@ -41,22 +74,38 @@ const Auth = () =>{
                 </div>
                 <form action="/reg" method="POST" className="flex flex-col w-[433px] h-[680px] items-center shadow-[0_0_20px_rgba(0,0,0,0.30)]">
                     <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]').content} />
+                    <input type="hidden" name="auth_form" value="register" />
                     <h1 className="text-[40px] mt-[10%] font-medium">Регистрация</h1>
                     <div className="flex flex-col
                     [&_input]:w-[335px] [&_input]:h-[55px] [&_input]:border-solid [&_input]:border-[#FA4234] [&_input]:border-2 [&_input]:text-[20px] [&_input]:pl-[27px]
-                    gap-8 ml-[42px] mr-[56px] mt-[10%]
+                    gap-4 ml-[42px] mr-[56px] mt-[10%]
                     [&_input:hover]:border-4 [&_input]:transition-all [&_input]:duration-30 [&_input]:ease-in-out">
-                        <input type="text" className="" name="login" placeholder="Логин" required/>
-                        {errors.login && <p className="text-red-500 text-sm">{errors.login[0]}</p>}
+                        <div className="flex flex-col">
+                            <input type="text" className="" name="login" placeholder="Логин" defaultValue={getRegisterFieldValue("login")} required/>
+                            {errors.login && <p className="text-red-500 text-sm mt-[1px]">{errors.login[0]}</p>}
+                        </div>
 
-                        <input type="password" name="password" placeholder="Пароль" required/>
-                        {errors.password && <p className="text-red-500 text-sm">{errors.password[0]}</p>}
+                        <div className="flex flex-col">
+                            <input type="password" name="password" placeholder="Пароль" defaultValue={getRegisterFieldValue("password")} required/>
+                            {errors.password && <p className="text-red-500 text-sm mt-[1px]">{errors.password[0]}</p>}
+                        </div>
 
-                        <input type="tel" name="phone" placeholder="Телефон" required/>
-                        {errors.phone && <p className="text-red-500 text-sm">{errors.phone[0]}</p>}
+                        <div className="flex flex-col">
+                            <input
+                                type="tel"
+                                name="phone"
+                                placeholder="Телефон"
+                                defaultValue={formatRuPhone(getRegisterFieldValue("phone"))}
+                                onInput={applyPhoneMask}
+                                required
+                            />
+                            {errors.phone && <p className="text-red-500 text-sm mt-[1px]">{errors.phone[0]}</p>}
+                        </div>
 
-                        <input type="email" name="email" placeholder="Почта" required/>
-                        {errors.email && <p className="text-red-500 text-sm">{errors.email[0]}</p>}
+                        <div className="flex flex-col">
+                            <input type="email" name="email" placeholder="Почта" defaultValue={getRegisterFieldValue("email")} required/>
+                            {errors.email && <p className="text-red-500 text-sm mt-[1px]">{errors.email[0]}</p>}
+                        </div>
 
                     </div>
                     <div className="flex items-center mt-[6%] ml-[-10%]">

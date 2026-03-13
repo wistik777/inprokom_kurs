@@ -48,7 +48,9 @@ const ProductPage = ({ product }) => {
                         <div className="mt-6 flex items-center gap-4">
                             <button
                                 type="button"
-                                onClick={() => addToCart(product)}
+                                onClick={() => {
+                                    addToCart(product).catch(() => {});
+                                }}
                                 className="cursor-pointer rounded-sm border border-[#FA4234] bg-[#FA4234] px-8 py-3 text-[14px] font-semibold text-white transition-all duration-300 hover:bg-white hover:text-[#FA4234]"
                             >
                                 В КОРЗИНУ

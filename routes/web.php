@@ -3,7 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\ManagerController;
+use App\Models\Cart;
 use App\Models\Product;
 
 Route::get('/', function () {
@@ -33,13 +35,72 @@ Route::get('/catalog/{product}', function (Product $product) {
 Route::get('/cart', function () {
     return view('cart');
 });
+Route::get('/cart/data', [CartController::class, 'data']);
+Route::post('/cart/items', [CartController::class, 'store']);
+Route::patch('/cart/items/{product}', [CartController::class, 'update']);
+Route::delete('/cart/items/{product}', [CartController::class, 'destroy']);
+Route::delete('/cart/items', [CartController::class, 'clear']);
+Route::post('/checkout', [CartController::class, 'checkout']);
 
 Route::get('/profile', function () {
     if (!auth()->check()) {
         return redirect('/auth');
     }
 
-    return view('profile');
+    $orders = Cart::query()
+        ->where('user_id', auth()->id())
+        ->where('status', '!=', 'active')
+        ->with(['items.product:id,name,model'])
+        ->latest('id')
+        ->get()
+        ->map(function (Cart $order) {
+            $itemsDetailed = $order->items
+                ->map(function ($item) {
+                    if (!$item->product) {
+                        return null;
+                    }
+
+                    $price = (float) $item->price_at_add;
+                    $qty = (int) $item->quantity;
+
+                    return [
+                        'id' => $item->id,
+                        'name' => $item->product->name,
+                        'model' => $item->product->model,
+                        'price' => $price,
+                        'qty' => $qty,
+                        'sum' => $price * $qty,
+                    ];
+                })
+                ->filter()
+                ->values();
+
+            $itemsText = $order->items
+                ->map(function ($item) {
+                    if (!$item->product) {
+                        return null;
+                    }
+
+                    return $item->product->name . ' x' . $item->quantity;
+                })
+                ->filter()
+                ->values()
+                ->implode(', ');
+
+            return [
+                'id' => $order->id,
+                'number' => $order->id,
+                'items' => $itemsText ?: 'Состав заказа недоступен',
+                'status' => $order->status,
+                'created_at' => optional($order->created_at)->format('d.m.Y H:i'),
+                'items_detailed' => $itemsDetailed->all(),
+                'total' => $itemsDetailed->sum('sum'),
+            ];
+        })
+        ->values()
+        ->all();
+
+    return view('profile', ['orders' => $orders]);
 });
 
 Route::get('/admin', [AdminController::class, 'index']);
@@ -72,5 +133,6 @@ Route::get('/stock-remainders', function () {
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/reg', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout']);
+Route::patch('/profile', [AuthController::class, 'updateProfile']);
 
 

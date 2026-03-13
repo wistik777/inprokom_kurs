@@ -1,13 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { clearCart, getCartItems, removeFromCart, setItemQty } from '../utils/cart';
+import { checkoutCart, clearCart, getCartItems, loadCart, removeFromCart, setItemQty } from '../utils/cart';
 
 const formatPrice = (value) => `${Number(value).toFixed(2)}р`;
 
 const CartPage = () => {
     const [items, setItems] = useState([]);
+    const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+    const isGuest = !window.authUser;
 
     useEffect(() => {
-        setItems(getCartItems());
+        loadCart()
+            .then(() => setItems(getCartItems()))
+            .catch(() => {});
 
         const handleUpdate = () => setItems(getCartItems());
         window.addEventListener('cart:updated', handleUpdate);
@@ -61,7 +65,9 @@ const CartPage = () => {
                             <div className="flex min-w-[220px] flex-col items-end justify-between">
                                 <button
                                     type="button"
-                                    onClick={() => removeFromCart(item.id)}
+                                    onClick={() => {
+                                        removeFromCart(item.id).catch(() => {});
+                                    }}
                                     className="text-[13px] text-[#888] transition-colors hover:text-[#FA4234]"
                                 >
                                     Удалить
@@ -70,7 +76,9 @@ const CartPage = () => {
                                 <div className="flex items-center gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => setItemQty(item.id, Number(item.qty) - 1)}
+                                        onClick={() => {
+                                            setItemQty(item.id, Number(item.qty) - 1).catch(() => {});
+                                        }}
                                         className="h-9 w-9 border border-[#FA4234] bg-white text-[18px] text-[#FA4234]"
                                     >
                                         -
@@ -78,7 +86,9 @@ const CartPage = () => {
                                     <span className="min-w-[36px] text-center text-[16px] font-medium">{item.qty}</span>
                                     <button
                                         type="button"
-                                        onClick={() => setItemQty(item.id, Number(item.qty) + 1)}
+                                        onClick={() => {
+                                            setItemQty(item.id, Number(item.qty) + 1).catch(() => {});
+                                        }}
                                         className="h-9 w-9 border border-[#FA4234] bg-white text-[18px] text-[#FA4234]"
                                     >
                                         +
@@ -92,7 +102,9 @@ const CartPage = () => {
                 <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-[#d8d8d8] pt-5">
                     <button
                         type="button"
-                        onClick={clearCart}
+                        onClick={() => {
+                            clearCart().catch(() => {});
+                        }}
                         className="rounded-sm border border-[#FA4234] bg-white px-5 py-2 text-[14px] font-medium text-[#FA4234] transition-colors hover:bg-[#FA4234] hover:text-white"
                     >
                         Очистить корзину
@@ -104,9 +116,29 @@ const CartPage = () => {
                         </p>
                         <button
                             type="button"
-                            className="rounded-sm border border-[#FA4234] bg-[#FA4234] px-6 py-2 text-[14px] font-semibold text-white transition-all duration-300 hover:bg-white hover:text-[#FA4234]"
+                            disabled={isCheckoutLoading}
+                            onClick={() => {
+                                if (isGuest) {
+                                    window.location.assign('/auth?form=register');
+                                    return;
+                                }
+
+                                setIsCheckoutLoading(true);
+                                checkoutCart()
+                                    .then((payload) => {
+                                        const orderId = payload?.order_id;
+                                        window.alert(orderId
+                                            ? `Заказ №${orderId} успешно оформлен`
+                                            : 'Заказ успешно оформлен');
+                                    })
+                                    .catch(() => {
+                                        window.alert('Не удалось оформить заказ. Проверьте корзину и попробуйте снова.');
+                                    })
+                                    .finally(() => setIsCheckoutLoading(false));
+                            }}
+                            className="rounded-sm border border-[#FA4234] bg-[#FA4234] px-6 py-2 text-[14px] font-semibold text-white transition-all duration-300 hover:bg-white hover:text-[#FA4234] disabled:cursor-not-allowed disabled:opacity-70"
                         >
-                            Оформить заказ
+                            {isCheckoutLoading ? 'Оформление...' : 'Оформить заказ'}
                         </button>
                     </div>
                 </div>

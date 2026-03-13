@@ -1,6 +1,6 @@
-const CART_KEY = 'inprokom_cart_items';
-
 const isBrowser = () => typeof window !== 'undefined';
+let cartItemsCache = [];
+let cartCountCache = 0;
 
 const emitCartUpdated = () => {
     if (!isBrowser()) return;
@@ -12,84 +12,100 @@ const emitCartAdded = (payload) => {
     window.dispatchEvent(new CustomEvent('cart:added', { detail: payload }));
 };
 
-const readCart = () => {
-    if (!isBrowser()) return [];
-
-    try {
-        const raw = window.localStorage.getItem(CART_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        return Array.isArray(parsed) ? parsed : [];
-    } catch {
-        return [];
-    }
+const getCsrfToken = () => {
+    if (!isBrowser()) return '';
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
 };
 
-const writeCart = (items) => {
-    if (!isBrowser()) return;
-    window.localStorage.setItem(CART_KEY, JSON.stringify(items));
+const request = async (url, options = {}) => {
+    const response = await fetch(url, {
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': getCsrfToken(),
+            ...(options.headers || {}),
+        },
+        ...options,
+    });
+
+    if (!response.ok) {
+        throw new Error(`Cart request failed with status ${response.status}`);
+    }
+
+    return response.json();
+};
+
+const syncCache = (payload) => {
+    cartItemsCache = Array.isArray(payload?.items) ? payload.items : [];
+    cartCountCache = Number(payload?.count || 0);
+};
+
+export const loadCart = async () => {
+    const payload = await request('/cart/data');
+    syncCache(payload);
+    emitCartUpdated();
+    return cartItemsCache;
+};
+
+export const getCartItems = () => cartItemsCache;
+
+export const getCartCount = () => {
+    return cartCountCache;
+};
+
+export const addToCart = async (product, qty = 1) => {
+    const nextQty = Math.max(1, Number(qty) || 1);
+    const payload = await request('/cart/items', {
+        method: 'POST',
+        body: JSON.stringify({
+            product_id: Number(product.id),
+            qty: nextQty,
+        }),
+    });
+
+    syncCache(payload);
+    emitCartUpdated();
+
+    const addedItem = cartItemsCache.find((item) => Number(item.id) === Number(product.id));
+    emitCartAdded({
+        productName: addedItem?.name || product.name,
+        qty: nextQty,
+        totalQty: Number(addedItem?.qty || nextQty),
+    });
+};
+
+export const setItemQty = async (productId, qty) => {
+    const nextQty = Math.max(0, Number(qty) || 0);
+    const payload = await request(`/cart/items/${Number(productId)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ qty: nextQty }),
+    });
+    syncCache(payload);
     emitCartUpdated();
 };
 
-export const getCartItems = () => readCart();
-
-export const getCartCount = () => {
-    return readCart().reduce((sum, item) => sum + Number(item.qty || 0), 0);
+export const removeFromCart = async (productId) => {
+    const payload = await request(`/cart/items/${Number(productId)}`, {
+        method: 'DELETE',
+    });
+    syncCache(payload);
+    emitCartUpdated();
 };
 
-export const addToCart = (product, qty = 1) => {
-    const nextQty = Math.max(1, Number(qty) || 1);
-    const current = readCart();
-    const productId = Number(product.id);
-    const existing = current.find((item) => Number(item.id) === productId);
+export const clearCart = async () => {
+    const payload = await request('/cart/items', {
+        method: 'DELETE',
+    });
+    syncCache(payload);
+    emitCartUpdated();
+};
 
-    if (existing) {
-        existing.qty = Number(existing.qty || 0) + nextQty;
-        writeCart(current);
-        emitCartAdded({
-            productName: existing.name,
-            qty: nextQty,
-            totalQty: existing.qty,
-        });
-        return;
-    }
-
-    current.push({
-        id: productId,
-        name: product.name,
-        model: product.model,
-        description: product.description || '',
-        price: Number(product.price),
-        image_url: product.image_url,
-        stock: Number(product.stock || 0),
-        qty: nextQty,
+export const checkoutCart = async () => {
+    const payload = await request('/checkout', {
+        method: 'POST',
     });
 
-    writeCart(current);
-    emitCartAdded({
-        productName: product.name,
-        qty: nextQty,
-        totalQty: nextQty,
-    });
-};
+    await loadCart();
 
-export const setItemQty = (productId, qty) => {
-    const nextQty = Number(qty) || 0;
-    const current = readCart();
-    const updated = current
-        .map((item) => {
-            if (Number(item.id) !== Number(productId)) return item;
-            return { ...item, qty: nextQty };
-        })
-        .filter((item) => Number(item.qty) > 0);
-
-    writeCart(updated);
-};
-
-export const removeFromCart = (productId) => {
-    const updated = readCart().filter((item) => Number(item.id) !== Number(productId));
-    writeCart(updated);
-};
-
-export const clearCart = () => {
-    writeCart([]);
+    return payload;
 };

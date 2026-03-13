@@ -1,6 +1,6 @@
 import React from "react";
 import { useEffect, useState } from "react";
-import { getCartCount } from "../utils/cart";
+import { getCartCount, loadCart } from "../utils/cart";
 
 function Header({ name, adminMode = false }) {
     const [ShowCompany, setShowCompany] = useState(false);
@@ -10,14 +10,13 @@ function Header({ name, adminMode = false }) {
 
     useEffect(() => {
         setCartCount(getCartCount());
+        loadCart().then(() => setCartCount(getCartCount())).catch(() => {});
 
         const refreshCartCount = () => setCartCount(getCartCount());
         window.addEventListener('cart:updated', refreshCartCount);
-        window.addEventListener('storage', refreshCartCount);
 
         return () => {
             window.removeEventListener('cart:updated', refreshCartCount);
-            window.removeEventListener('storage', refreshCartCount);
         };
     }, []);
 

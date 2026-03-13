@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { applyPhoneMask, formatRuPhone } from '../utils/phoneMask';
 
 const AdminHome = () => {
     const managers = Array.isArray(window.adminManagers) ? window.adminManagers : [];
@@ -114,8 +115,9 @@ const AdminHome = () => {
                                     <input
                                         type="text"
                                         name="phone"
-                                        defaultValue={old.phone || ''}
+                                        defaultValue={formatRuPhone(old.phone || '')}
                                         placeholder="+7(XXX)-XXX-XX-XX"
+                                        onInput={applyPhoneMask}
                                         className="h-[44px] w-full rounded-md border border-[#FA4234] bg-white px-3 text-[15px] outline-none"
                                         required
                                     />

@@ -67,7 +67,7 @@ const Card = ({ product }) => {
                             type="button"
                             onClick={(event) => {
                                 event.stopPropagation();
-                                addToCart(product);
+                                addToCart(product).catch(() => {});
                             }}
                             className="cursor-pointer rounded-sm border border-white bg-transparent px-4 py-1.5 text-[11px] font-semibold text-white transition-all duration-500 ease-out hover:-translate-y-0.5 hover:bg-white hover:text-[#FA4234]"
                         >
