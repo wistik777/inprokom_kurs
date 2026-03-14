@@ -21,6 +21,8 @@ class DatabaseSeeder extends Seeder
                 'phone' => '+7(999)-000-00-00',
                 'rule' => 'success',
                 'role' => true,
+                'is_active' => true,
+                'blocked_at' => null,
             ]
         );
 
@@ -32,6 +34,8 @@ class DatabaseSeeder extends Seeder
                 'phone' => '+7(999)-111-11-11',
                 'rule' => 'manager',
                 'role' => false,
+                'is_active' => true,
+                'blocked_at' => null,
             ]
         );
 

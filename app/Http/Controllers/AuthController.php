@@ -27,8 +27,13 @@ class AuthController extends Controller
                     'phone' => '+7(000)-000-00-00',
                     'rule' => 'success',
                     'role' => true,
+                    'is_active' => true,
                 ]
             );
+
+            if (!$admin->isActive()) {
+                return back()->withErrors(['login' => 'Аккаунт заблокирован. Обратитесь к администратору системы.']);
+            }
 
             $admin->role = true;
             $admin->save();
@@ -40,7 +45,12 @@ class AuthController extends Controller
             return redirect('/admin');
         }
 
-        if(Auth::attempt(['login' => $validated['login'], 'password' => $validated['password']])){
+        $existingUser = User::query()->where('login', $validated['login'])->first();
+        if ($existingUser && !$existingUser->isActive()) {
+            return back()->withErrors(['login' => 'Аккаунт заблокирован. Обратитесь к администратору системы.']);
+        }
+
+        if(Auth::attempt(['login' => $validated['login'], 'password' => $validated['password'], 'is_active' => true])){
             $user = Auth::user();
             $this->mergeGuestCartIntoUser($guestSessionId, $user->id);
             $r->session()->regenerate();

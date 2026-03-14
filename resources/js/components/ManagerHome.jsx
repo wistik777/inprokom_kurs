@@ -1,21 +1,35 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
 const ITEMS_PER_PAGE = 12;
+const ORDERS_PER_PAGE = 10;
 
 const formatPrice = (value) => `${Number(value || 0).toFixed(2)}р`;
 
 const ManagerHome = () => {
     const products = Array.isArray(window.managerProducts) ? window.managerProducts : [];
     const categories = Array.isArray(window.managerCategories) ? window.managerCategories : [];
+    const orders = Array.isArray(window.managerOrders) ? window.managerOrders : [];
     const success = window.managerSuccess || '';
     const errors = window.errors || {};
     const old = window.managerFormOld || {};
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const statusLabels = {
+        new: 'Новый',
+        processing: 'В обработке',
+        shipped: 'Отправлен',
+        delivered: 'Доставлен',
+        cancelled: 'Отменен',
+    };
 
     const [searchField, setSearchField] = useState('name');
     const [searchValue, setSearchValue] = useState('');
     const [sortMode, setSortMode] = useState('default');
     const [currentPage, setCurrentPage] = useState(1);
+    const [orderSearchField, setOrderSearchField] = useState('number');
+    const [orderSearchValue, setOrderSearchValue] = useState('');
+    const [orderStatusFilter, setOrderStatusFilter] = useState('all');
+    const [orderSortMode, setOrderSortMode] = useState('date_desc');
+    const [orderCurrentPage, setOrderCurrentPage] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(Object.keys(errors).length > 0);
     const [productToDelete, setProductToDelete] = useState(null);
     const [selectedFileName, setSelectedFileName] = useState('');
@@ -24,6 +38,13 @@ const ManagerHome = () => {
         setSearchField('name');
         setSearchValue('');
         setSortMode('default');
+    };
+
+    const handleResetOrderFilters = () => {
+        setOrderSearchField('number');
+        setOrderSearchValue('');
+        setOrderStatusFilter('all');
+        setOrderSortMode('date_desc');
     };
 
     const filteredProducts = useMemo(() => {
@@ -50,11 +71,51 @@ const ManagerHome = () => {
         return result;
     }, [products, searchField, searchValue, sortMode]);
 
+    const filteredOrders = useMemo(() => {
+        const normalizedQuery = orderSearchValue.trim().toLowerCase();
+        let result = [...orders];
+
+        if (orderStatusFilter !== 'all') {
+            result = result.filter((order) => order.status === orderStatusFilter);
+        }
+
+        if (normalizedQuery) {
+            result = result.filter((order) => {
+                if (orderSearchField === 'number') {
+                    return String(order.id).includes(normalizedQuery);
+                }
+
+                if (orderSearchField === 'user') {
+                    return String(order.user?.login || '').toLowerCase().includes(normalizedQuery);
+                }
+
+                return String(order.items || '').toLowerCase().includes(normalizedQuery);
+            });
+        }
+
+        if (orderSortMode === 'date_asc') {
+            result.sort((a, b) => a.id - b.id);
+        } else if (orderSortMode === 'date_desc') {
+            result.sort((a, b) => b.id - a.id);
+        } else if (orderSortMode === 'number_asc') {
+            result.sort((a, b) => a.id - b.id);
+        } else if (orderSortMode === 'number_desc') {
+            result.sort((a, b) => b.id - a.id);
+        }
+
+        return result;
+    }, [orders, orderSearchField, orderSearchValue, orderSortMode, orderStatusFilter]);
+
     const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
+    const orderTotalPages = Math.max(1, Math.ceil(filteredOrders.length / ORDERS_PER_PAGE));
 
     useEffect(() => {
         setCurrentPage(1);
     }, [searchField, searchValue, sortMode]);
+
+    useEffect(() => {
+        setOrderCurrentPage(1);
+    }, [orderSearchField, orderSearchValue, orderSortMode, orderStatusFilter]);
 
     useEffect(() => {
         if (currentPage > totalPages) {
@@ -62,10 +123,21 @@ const ManagerHome = () => {
         }
     }, [currentPage, totalPages]);
 
+    useEffect(() => {
+        if (orderCurrentPage > orderTotalPages) {
+            setOrderCurrentPage(orderTotalPages);
+        }
+    }, [orderCurrentPage, orderTotalPages]);
+
     const paginatedProducts = useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredProducts.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredProducts, currentPage]);
+
+    const paginatedOrders = useMemo(() => {
+        const start = (orderCurrentPage - 1) * ORDERS_PER_PAGE;
+        return filteredOrders.slice(start, start + ORDERS_PER_PAGE);
+    }, [filteredOrders, orderCurrentPage]);
 
     const visiblePages = useMemo(() => {
         let start = Math.max(1, currentPage - 1);
@@ -78,8 +150,23 @@ const ManagerHome = () => {
         return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
     }, [currentPage, totalPages]);
 
+    const visibleOrderPages = useMemo(() => {
+        let start = Math.max(1, orderCurrentPage - 1);
+        let end = Math.min(orderTotalPages, start + 2);
+
+        if (end - start < 2) {
+            start = Math.max(1, end - 2);
+        }
+
+        return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
+    }, [orderCurrentPage, orderTotalPages]);
+
     const goToPage = (page) => {
         setCurrentPage(Math.min(totalPages, Math.max(1, page)));
+    };
+
+    const goToOrderPage = (page) => {
+        setOrderCurrentPage(Math.min(orderTotalPages, Math.max(1, page)));
     };
 
     return (
@@ -101,7 +188,130 @@ const ManagerHome = () => {
                 </div>
             )}
 
-            <div className="mt-6 flex items-center gap-4">
+            <section className="mt-6 rounded-2xl border border-[#ececec] bg-white p-6 shadow-[0_10px_26px_rgba(0,0,0,0.05)]">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-[28px] font-semibold text-[#1b1b1b]">Заказы пользователей</h2>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center gap-4">
+                    <select
+                        value={orderSearchField}
+                        onChange={(event) => setOrderSearchField(event.target.value)}
+                        className="h-[42px] w-[220px] border border-[#f4a8a2] bg-white px-3 text-[15px]"
+                    >
+                        <option value="number">По номеру...</option>
+                        <option value="user">По логину...</option>
+                        <option value="items">По составу...</option>
+                    </select>
+                    <input
+                        value={orderSearchValue}
+                        onChange={(event) => setOrderSearchValue(event.target.value)}
+                        placeholder="Введите значение..."
+                        className="h-[42px] w-[240px] border border-[#f4a8a2] bg-white px-3 text-[15px]"
+                    />
+                    <select
+                        value={orderStatusFilter}
+                        onChange={(event) => setOrderStatusFilter(event.target.value)}
+                        className="h-[42px] w-[220px] border border-[#f4a8a2] bg-white px-3 text-[15px]"
+                    >
+                        <option value="all">Все статусы</option>
+                        <option value="new">Новый</option>
+                        <option value="processing">В обработке</option>
+                        <option value="shipped">Отправлен</option>
+                        <option value="delivered">Доставлен</option>
+                        <option value="cancelled">Отменен</option>
+                    </select>
+                    <select
+                        value={orderSortMode}
+                        onChange={(event) => setOrderSortMode(event.target.value)}
+                        className="h-[42px] w-[240px] border border-[#f4a8a2] bg-white px-3 text-[15px]"
+                    >
+                        <option value="date_desc">Сначала новые</option>
+                        <option value="date_asc">Сначала старые</option>
+                        <option value="number_asc">Номер (по возрастанию)</option>
+                        <option value="number_desc">Номер (по убыванию)</option>
+                    </select>
+                    <button
+                        type="button"
+                        onClick={handleResetOrderFilters}
+                        className="btn-fill h-[42px] w-[150px] bg-white text-[13px] font-semibold"
+                    >
+                        <span className="relative z-10">СБРОСИТЬ</span>
+                    </button>
+                </div>
+
+                <div className="mt-5 overflow-hidden rounded-2xl border border-[#ececec]">
+                    <div className="hidden grid-cols-[90px_180px_1.3fr_170px_220px] bg-[#f8f8f8] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#777] md:grid">
+                        <p>Номер</p>
+                        <p>Пользователь</p>
+                        <p>Состав</p>
+                        <p>Сумма</p>
+                        <p>Статус</p>
+                    </div>
+
+                    {paginatedOrders.length > 0 ? (
+                        paginatedOrders.map((order) => (
+                            <div key={order.id} className="border-t border-[#efefef] px-5 py-4 md:grid md:grid-cols-[90px_180px_1.3fr_170px_220px] md:items-center">
+                                <p className="text-[15px] font-semibold text-[#1f1f1f]">#{order.id}</p>
+                                <div className="mt-2 md:mt-0">
+                                    <p className="text-[15px] font-semibold text-[#1f1f1f]">{order.user?.login || 'Гость'}</p>
+                                    <p className="text-[12px] text-[#666]">{order.user?.email || '—'}</p>
+                                </div>
+                                <p className="mt-2 text-[14px] text-[#3a3a3a] md:mt-0">{order.items || '—'}</p>
+                                <p className="mt-2 text-[15px] font-semibold text-[#3a3a3a] md:mt-0">{formatPrice(order.total)}</p>
+                                <div className="mt-2 md:mt-0">
+                                    <form action={`/manager/orders/${order.id}`} method="POST" className="flex items-center gap-2">
+                                        <input type="hidden" name="_token" value={csrfToken} />
+                                        <input type="hidden" name="_method" value="PATCH" />
+                                        <select
+                                            name="status"
+                                            defaultValue={order.status}
+                                            className="h-[36px] w-[130px] border border-[#FA4234] bg-white px-2 text-[13px] outline-none"
+                                        >
+                                            <option value="new">Новый</option>
+                                            <option value="processing">В обработке</option>
+                                            <option value="shipped">Отправлен</option>
+                                            <option value="delivered">Доставлен</option>
+                                            <option value="cancelled">Отменен</option>
+                                        </select>
+                                        <button type="submit" className="btn-fill h-[36px] min-w-[80px] bg-white px-3 text-[12px] font-semibold">
+                                            <span className="relative z-10">OK</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="border-t border-[#efefef] px-5 py-8 text-center text-[15px] text-[#777]">
+                            По выбранным параметрам заказы не найдены
+                        </div>
+                    )}
+                </div>
+
+                <div className="mt-6 flex flex-col items-center">
+                    <div className="flex items-center gap-4 text-[20px]">
+                        <button type="button" onClick={() => goToOrderPage(1)} className="cursor-pointer transition-colors hover:text-[#FA4234]">В начало</button>
+                        <button type="button" onClick={() => goToOrderPage(orderCurrentPage - 1)} className="cursor-pointer text-[26px] transition-colors hover:text-[#FA4234]" aria-label="Предыдущая страница заказов">&#8249;</button>
+                        <div className="flex items-center gap-2.5">
+                            {visibleOrderPages.map((page) => (
+                                <button
+                                    key={page}
+                                    type="button"
+                                    onClick={() => goToOrderPage(page)}
+                                    className={`cursor-pointer transition-colors ${orderCurrentPage === page ? 'text-[#FA4234]' : 'text-black hover:text-[#FA4234]'}`}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+                        </div>
+                        <button type="button" onClick={() => goToOrderPage(orderCurrentPage + 1)} className="cursor-pointer text-[26px] transition-colors hover:text-[#FA4234]" aria-label="Следующая страница заказов">&#8250;</button>
+                        <button type="button" onClick={() => goToOrderPage(orderTotalPages)} className="cursor-pointer transition-colors hover:text-[#FA4234]">В конец</button>
+                    </div>
+                    <div className="mt-1.5 h-[2px] w-full max-w-[700px] bg-[#FA4234]" />
+                </div>
+            </section>
+
+            <div className="mt-20 flex items-center gap-4">
                 <select
                     value={searchField}
                     onChange={(event) => setSearchField(event.target.value)}
@@ -226,11 +436,6 @@ const ManagerHome = () => {
                                     <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-[#777]">Цена</label>
                                     <input type="number" step="0.01" min="0" name="price" defaultValue={old.price || ''} className="h-[44px] w-full rounded-md border border-[#FA4234] bg-white px-3 text-[15px] outline-none" required />
                                     {errors.price && <p className="mt-1 text-[13px] text-red-500">{errors.price[0]}</p>}
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-[#777]">Остаток</label>
-                                    <input type="number" min="0" name="stock" defaultValue={old.stock || '0'} className="h-[44px] w-full rounded-md border border-[#FA4234] bg-white px-3 text-[15px] outline-none" required />
-                                    {errors.stock && <p className="mt-1 text-[13px] text-red-500">{errors.stock[0]}</p>}
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-[#777]">Изображение товара</label>

@@ -6,6 +6,7 @@
     <script>
         window.managerProducts = @json($products ?? []);
         window.managerCategories = @json($categories ?? []);
+        window.managerOrders = @json($orders ?? []);
         window.managerSuccess = @json($success ?? null);
         window.managerFormOld = @json($oldValues ?? []);
     </script>

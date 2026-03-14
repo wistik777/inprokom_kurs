@@ -5,6 +5,7 @@
 @section('content')
     <script>
         window.adminManagers = @json($managers ?? []);
+        window.adminAuditLogs = @json($auditLogs ?? []);
         window.adminSuccess = @json($success ?? null);
         window.adminFormOld = @json($oldValues ?? []);
     </script>

@@ -106,9 +106,12 @@ Route::get('/profile', function () {
 Route::get('/admin', [AdminController::class, 'index']);
 Route::get('/admin/create-manager', [AdminController::class, 'createManager']);
 Route::post('/admin/create-manager', [AdminController::class, 'storeManager']);
+Route::delete('/admin/managers/{manager}', [AdminController::class, 'destroyManager']);
+Route::post('/admin/audit-logs/{auditLog}/rollback', [AdminController::class, 'rollbackAuditLog']);
 Route::get('/manager', [ManagerController::class, 'index']);
 Route::post('/manager/products', [ManagerController::class, 'storeProduct']);
 Route::delete('/manager/products/{product}', [ManagerController::class, 'destroyProduct']);
+Route::patch('/manager/orders/{order}', [ManagerController::class, 'updateOrderStatus']);
 
 Route::get('/about-company', function () {
     return view('placeholder', ['title' => 'О компании']);

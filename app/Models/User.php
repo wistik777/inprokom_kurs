@@ -25,10 +25,17 @@ class User extends Authenticatable
         'phone',
         'rule',
         'role',
+        'is_active',
+        'blocked_at',
     ];
 
     public function isAdmin(){
         return (bool) $this->role;
+    }
+
+    public function isActive(): bool
+    {
+        return (bool) $this->is_active;
     }
 
     public function carts(): HasMany
@@ -56,6 +63,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'blocked_at' => 'datetime',
         ];
     }
 }

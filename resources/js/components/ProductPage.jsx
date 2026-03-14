@@ -55,9 +55,6 @@ const ProductPage = ({ product }) => {
                             >
                                 В КОРЗИНУ
                             </button>
-                            <span className="text-[16px] text-[#444]">
-                                В наличии: <strong>{product.stock}</strong>
-                            </span>
                         </div>
                     </div>
 
@@ -80,7 +77,6 @@ const ProductPage = ({ product }) => {
                             <div className="mt-3 space-y-1.5 text-[16px] text-[#333]">
                                 <p>Модель: <strong>{product.model}</strong></p>
                                 <p>Цена: <strong>{formatPrice(product.price)}</strong></p>
-                                <p>Наличие на складе: <strong>{product.stock}</strong></p>
                                 <p>
                                     Категории: <strong>{categories.length ? categories.map((category) => category.name).join(', ') : '—'}</strong>
                                 </p>
