@@ -24,7 +24,7 @@ class ManagerController extends Controller
         $products = Product::query()
             ->with(['categories:id,name'])
             ->latest('id')
-            ->get(['id', 'name', 'model', 'price', 'stock', 'is_active']);
+            ->get(['id', 'name', 'model', 'price', 'is_active']);
 
         $categories = Category::query()
             ->where('is_active', true)
@@ -118,7 +118,6 @@ class ManagerController extends Controller
             'description' => $validated['description'] ?? null,
             'price' => $validated['price'],
             'image_url' => $imageUrl,
-            'stock' => 0,
             'is_active' => true,
         ]);
 

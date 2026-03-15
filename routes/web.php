@@ -129,10 +129,6 @@ Route::get('/vacancies', function () {
     return view('placeholder', ['title' => 'Вакансии']);
 });
 
-Route::get('/stock-remainders', function () {
-    return view('placeholder', ['title' => 'Неликвиды и остатки складов']);
-});
-
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/reg', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout']);

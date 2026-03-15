@@ -90,7 +90,6 @@ function Header({ name, adminMode = false }) {
                                 <a href="/press-center">ПРЕСС-ЦЕНТР</a>
                                 <a href="/contacts">КОНТАКТЫ</a>
                                 <a href="/vacancies">ВАКАНСИИ</a>
-                                <a href="/stock-remainders">НЕЛИКВИДЫ И ОСТАТКИ СКЛАДОВ</a>
                             </div>
                         </div>
                         <a href="/cart" className="relative cursor-pointer">
@@ -126,7 +125,6 @@ function Header({ name, adminMode = false }) {
                         <a href="/press-center">ПРЕСС-ЦЕНТР</a>
                         <a href="/contacts">КОНТАКТЫ</a>
                         <a href="/vacancies">ВАКАНСИИ</a>
-                        <a href="/stock-remainders">НЕЛИКВИДЫ И ОСТАТКИ СКЛАДОВ</a>
                     </div>
                     <hr className="mt-3"/>
                 </div>

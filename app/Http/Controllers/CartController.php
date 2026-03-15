@@ -29,12 +29,6 @@ class CartController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        if ($product->stock <= 0) {
-            return response()->json([
-                'message' => 'Товар отсутствует на складе',
-            ], 422);
-        }
-
         $cart = $this->resolveCart($request, true);
         $qtyToAdd = (int) ($validated['qty'] ?? 1);
 
@@ -43,13 +37,13 @@ class CartController extends Controller
             ->first();
 
         if ($item) {
-            $item->quantity = min($product->stock, $item->quantity + $qtyToAdd);
+            $item->quantity = $item->quantity + $qtyToAdd;
             $item->save();
         } else {
             CartItem::create([
                 'cart_id' => $cart->id,
                 'product_id' => $product->id,
-                'quantity' => min($product->stock, $qtyToAdd),
+                'quantity' => $qtyToAdd,
                 'price_at_add' => $product->price,
             ]);
         }
@@ -78,7 +72,7 @@ class CartController extends Controller
             return response()->json($this->serializeCart($cart));
         }
 
-        $nextQty = min($product->stock, (int) $validated['qty']);
+        $nextQty = (int) $validated['qty'];
         if ($nextQty <= 0) {
             $item->delete();
         } else {
@@ -141,21 +135,11 @@ class CartController extends Controller
         }
 
         foreach ($cart->items as $item) {
-            if (!$item->product || !$item->product->is_active || $item->product->stock <= 0) {
+            if (!$item->product || !$item->product->is_active) {
                 return response()->json([
                     'message' => 'Один из товаров недоступен для заказа',
                 ], 422);
             }
-
-            if ($item->quantity > $item->product->stock) {
-                return response()->json([
-                    'message' => 'Недостаточно товара на складе для оформления заказа',
-                ], 422);
-            }
-        }
-
-        foreach ($cart->items as $item) {
-            $item->product->decrement('stock', $item->quantity);
         }
 
         $cart->status = 'new';
@@ -200,7 +184,6 @@ class CartController extends Controller
                     'description' => $item->product->description ?? '',
                     'price' => (float) $item->price_at_add,
                     'image_url' => $item->product->image_url,
-                    'stock' => (int) $item->product->stock,
                     'qty' => (int) $item->quantity,
                 ];
             })

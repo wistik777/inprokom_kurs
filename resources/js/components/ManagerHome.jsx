@@ -347,23 +347,21 @@ const ManagerHome = () => {
             </div>
 
             <section className="mt-6 overflow-hidden rounded-2xl border border-[#ececec] bg-white shadow-[0_10px_26px_rgba(0,0,0,0.05)]">
-                <div className="hidden grid-cols-[80px_1.3fr_1fr_1fr_1fr_1fr] bg-[#f8f8f8] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#777] md:grid">
+                <div className="hidden grid-cols-[80px_1.4fr_1fr_1fr_1fr] bg-[#f8f8f8] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#777] md:grid">
                     <p>ID</p>
                     <p>Название</p>
                     <p>Модель</p>
                     <p>Цена</p>
-                    <p>Остаток</p>
                     <p>Действие</p>
                 </div>
 
                 {paginatedProducts.length > 0 ? (
                     paginatedProducts.map((product) => (
-                        <div key={product.id} className="border-t border-[#efefef] px-5 py-4 md:grid md:grid-cols-[80px_1.3fr_1fr_1fr_1fr_1fr] md:items-center">
+                        <div key={product.id} className="border-t border-[#efefef] px-5 py-4 md:grid md:grid-cols-[80px_1.4fr_1fr_1fr_1fr] md:items-center">
                             <p className="text-[15px] text-[#1f1f1f]">{product.id}</p>
                             <p className="mt-2 text-[15px] font-semibold text-[#1f1f1f] md:mt-0">{product.name}</p>
                             <p className="mt-2 text-[15px] text-[#3a3a3a] md:mt-0">{product.model}</p>
                             <p className="mt-2 text-[15px] text-[#3a3a3a] md:mt-0">{formatPrice(product.price)}</p>
-                            <p className="mt-2 text-[15px] text-[#3a3a3a] md:mt-0">{product.stock}</p>
                             <p className="mt-2 md:mt-0">
                                 <button
                                     type="button"
