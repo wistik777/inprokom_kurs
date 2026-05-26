@@ -118,9 +118,9 @@ const Catalog = ({ products }) => {
     };
 
     return (
-        <main className="mx-auto w-full max-w-[78%] px-0 pb-16 pt-6  ml-60">
-            <div className="flex items-start gap-4">
-                <aside className="hidden w-[270px] shrink-0 bg-white p-3 lg:block">
+        <main className="page-container w-full max-w-full pb-12 pt-4 min-[426px]:pb-16 min-[426px]:pt-6 lg:ml-60 lg:max-w-[calc(100%-15rem)] lg:pr-8">
+            <div className="flex flex-col items-start gap-6 lg:flex-row lg:gap-4">
+                <aside className="hidden w-full shrink-0 bg-white p-3 lg:block lg:w-[270px]">
                     <h2 className="mb-2 text-[18px] font-semibold uppercase">Категории</h2>
                     <ul>
                         {categories.map((category, index) => (
@@ -155,18 +155,18 @@ const Catalog = ({ products }) => {
                     </ul>
                 </aside>
 
-                <div className="ml-[6%] flex-1">
-                    <h2 className="mb-3 text-[28px] font-semibold uppercase">
+                <div className="w-full flex-1 lg:ml-[6%]">
+                    <h2 className="mb-3 text-[22px] font-semibold uppercase min-[426px]:text-[28px]">
                         {selectedGenre ? `Все товары: ${selectedGenre}` : 'Все товары'}
                     </h2>
 
-                    <div className="mb-6 flex items-center justify-between bg-white px-0 py-4">
+                    <div className="mb-6 bg-white px-0 py-4">
 
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-col gap-3 min-[426px]:flex-row min-[426px]:flex-wrap min-[426px]:items-center min-[426px]:gap-4">
                             <select
                                 value={searchField}
                                 onChange={(e) => setSearchField(e.target.value)}
-                                className="h-[42px] w-[300px] border border-[#f4a8a2] bg-white px-3 text-[15px]"
+                                className="h-[42px] w-full border border-[#f4a8a2] bg-white px-3 text-[15px] min-[426px]:w-[220px] lg:w-[300px]"
                             >
                                 <option value="name">По наименованию...</option>
                                 <option value="model">По модели...</option>
@@ -175,12 +175,12 @@ const Catalog = ({ products }) => {
                                 value={searchValue}
                                 onChange={(e) => setSearchValue(e.target.value)}
                                 placeholder="Введите значение..."
-                                className="h-[42px] w-[260px] border border-[#f4a8a2] bg-white px-3 text-[15px]"
+                                className="h-[42px] w-full border border-[#f4a8a2] bg-white px-3 text-[15px] min-[426px]:w-[220px] lg:w-[260px]"
                             />
                             <select
                                 value={sortMode}
                                 onChange={(e) => setSortMode(e.target.value)}
-                                className="h-[42px] w-[260px] border border-[#f4a8a2] bg-white px-3 text-[15px]"
+                                className="h-[42px] w-full border border-[#f4a8a2] bg-white px-3 text-[15px] min-[426px]:w-[220px] lg:w-[260px]"
                             >
                                 <option value="default">По умолчанию</option>
                                 <option value="name_asc">Название (А-Я)</option>
@@ -191,14 +191,14 @@ const Catalog = ({ products }) => {
                             <button
                                 type="button"
                                 onClick={handleResetFilters}
-                                className="btn-fill h-[42px] w-[150px] bg-white text-[13px] font-semibold"
+                                className="btn-fill h-[42px] w-full bg-white text-[13px] font-semibold min-[426px]:w-[150px]"
                             >
                                 <span className="relative z-10">СБРОСИТЬ</span>
                             </button>
                         </div>
                     </div>
 
-                    <section className="grid flex-1 grid-cols-2 justify-items-start gap-x-6 gap-y-4 md:grid-cols-3 xl:grid-cols-4">
+                    <section className="grid flex-1 grid-cols-1 justify-items-stretch gap-x-4 gap-y-4 min-[426px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                         {paginatedProducts.map((product) => (
                             <Card key={product.id} product={product} />
                         ))}

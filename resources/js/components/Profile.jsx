@@ -1,32 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { formatRuPhone } from '../utils/phoneMask';
-
-const Modal = ({ title, children, onClose }) => (
-    <div
-        className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 px-4"
-        onClick={onClose}
-    >
-        <div
-            className="w-full max-w-[560px] rounded-2xl bg-white p-6 shadow-[0_18px_40px_rgba(0,0,0,0.25)]"
-            onClick={(event) => event.stopPropagation()}
-        >
-            <div className="mb-5 flex items-center justify-between">
-                <h3 className="text-[24px] font-semibold text-[#1b1b1b]">{title}</h3>
-                <button
-                    type="button"
-                    onClick={onClose}
-                    className="h-9 w-9 rounded-md border border-[#ececec] text-[20px] leading-none text-[#666] transition-colors hover:border-[#FA4234] hover:text-[#FA4234]"
-                    aria-label="Закрыть модальное окно"
-                >
-                    x
-                </button>
-            </div>
-            {children}
-        </div>
-    </div>
-);
-
-const formatPrice = (value) => `${Number(value || 0).toFixed(2)}р`;
+import Modal from './ui/Modal';
+import OrderDetailsModal from './orders/OrderDetailsModal';
+import { clipText } from '../utils/clipText';
 
 const Profile = () => {
     const authUser = window.authUser || {};
@@ -364,7 +340,7 @@ const Profile = () => {
                     </div>
                 </div>
                 <div className="mt-5 overflow-hidden rounded-xl border border-[#ececec]">
-                    <div className="hidden grid-cols-[160px_1fr_170px] bg-[#f8f8f8] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#777] md:grid">
+                    <div className="hidden grid-cols-[120px_minmax(0,1fr)_170px] bg-[#f8f8f8] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#777] md:grid">
                         <p>Номер</p>
                         <p>Состав заказа</p>
                         <p>Статус</p>
@@ -382,10 +358,15 @@ const Profile = () => {
                                         openOrderDetails(order);
                                     }
                                 }}
-                                className="cursor-pointer border-t border-[#efefef] px-5 py-4 transition-colors hover:bg-[#fff8f7] md:grid md:grid-cols-[160px_1fr_170px] md:items-center"
+                                className="cursor-pointer border-t border-[#efefef] px-5 py-4 transition-colors hover:bg-[#fff8f7] md:grid md:grid-cols-[120px_minmax(0,1fr)_170px] md:items-center"
                             >
                                 <p className="text-[15px] font-semibold text-[#1f1f1f]">#{order.number}</p>
-                                <p className="mt-2 text-[15px] text-[#3a3a3a] md:mt-0">{order.items}</p>
+                                <p
+                                    className="mt-2 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[15px] text-[#3a3a3a] md:mt-0"
+                                    title={order.items}
+                                >
+                                    {clipText(order.items, 36)}
+                                </p>
                                 <p className="mt-3 md:mt-0">
                                     <span
                                         className={`inline-flex h-[34px] w-[140px] items-center justify-center rounded-[5px] border text-[13px] font-semibold ${
@@ -513,42 +494,11 @@ const Profile = () => {
             )}
 
             {selectedOrder && (
-                <Modal title={`Заказ #${selectedOrder.number}`} onClose={() => setSelectedOrder(null)}>
-                    <div className="space-y-4">
-                        <div className="rounded-xl border border-[#efefef] bg-[#fcfcfc] px-4 py-3">
-                            <p className="text-[13px] text-[#666]">
-                                Статус: <span className="font-semibold text-[#1f1f1f]">{selectedOrder.status}</span>
-                            </p>
-                            <p className="mt-1 text-[13px] text-[#666]">
-                                Дата оформления: <span className="font-semibold text-[#1f1f1f]">{selectedOrder.created_at || '—'}</span>
-                            </p>
-                        </div>
-
-                        <div className="overflow-hidden rounded-xl border border-[#efefef]">
-                            <div className="grid grid-cols-[1fr_90px_120px] bg-[#f8f8f8] px-4 py-2 text-[12px] font-semibold uppercase tracking-wide text-[#777]">
-                                <p>Товар</p>
-                                <p className="text-center">Кол-во</p>
-                                <p className="text-right">Сумма</p>
-                            </div>
-                            {(selectedOrder.items_detailed || []).map((item) => (
-                                <div key={item.id} className="grid grid-cols-[1fr_90px_120px] border-t border-[#efefef] px-4 py-3 text-[14px] text-[#2f2f2f]">
-                                    <div>
-                                        <p className="font-medium">{item.name}</p>
-                                        <p className="text-[12px] text-[#777]">{item.model || '—'}</p>
-                                        <p className="text-[12px] text-[#777]">{formatPrice(item.price)} за шт.</p>
-                                    </div>
-                                    <p className="self-center text-center">{item.qty}</p>
-                                    <p className="self-center text-right font-semibold">{formatPrice(item.sum)}</p>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="flex items-center justify-between rounded-xl border border-[#efefef] bg-[#fcfcfc] px-4 py-3">
-                            <p className="text-[15px] font-medium text-[#333]">Итого</p>
-                            <p className="text-[20px] font-semibold text-[#FA4234]">{formatPrice(selectedOrder.total)}</p>
-                        </div>
-                    </div>
-                </Modal>
+                <OrderDetailsModal
+                    order={selectedOrder}
+                    statusLabel={selectedOrder.status}
+                    onClose={() => setSelectedOrder(null)}
+                />
             )}
         </>
     );

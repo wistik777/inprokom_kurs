@@ -9,7 +9,7 @@ use App\Models\Cart;
 use App\Models\Product;
 
 Route::get('/', function () {
-    return view('placeholder', ['title' => 'Главная']);
+    return view('home');
 });
 
 Route::get('/auth', function () {
@@ -114,19 +114,27 @@ Route::delete('/manager/products/{product}', [ManagerController::class, 'destroy
 Route::patch('/manager/orders/{order}', [ManagerController::class, 'updateOrderStatus']);
 
 Route::get('/about-company', function () {
-    return view('placeholder', ['title' => 'О компании']);
+    return view('about-company');
 });
 
 Route::get('/press-center', function () {
-    return view('placeholder', ['title' => 'Пресс-центр']);
+    return view('press-center');
 });
 
+Route::get('/press-center/news', function () {
+    return view('press-center-news');
+});
+
+Route::get('/press-center/news/{news}', function (int $news) {
+    return view('press-center-news-article', ['newsId' => $news]);
+})->whereNumber('news');
+
 Route::get('/contacts', function () {
-    return view('placeholder', ['title' => 'Контакты']);
+    return view('contacts');
 });
 
 Route::get('/vacancies', function () {
-    return view('placeholder', ['title' => 'Вакансии']);
+    return view('vacancies');
 });
 
 Route::post('/login', [AuthController::class, 'login']);

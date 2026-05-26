@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import OrderDetailsModal from './orders/OrderDetailsModal';
+import { clipText } from '../utils/clipText';
 
 const ITEMS_PER_PAGE = 12;
 const ORDERS_PER_PAGE = 10;
@@ -33,6 +35,14 @@ const ManagerHome = () => {
     const [isModalOpen, setIsModalOpen] = useState(Object.keys(errors).length > 0);
     const [productToDelete, setProductToDelete] = useState(null);
     const [selectedFileName, setSelectedFileName] = useState('');
+    const [selectedOrder, setSelectedOrder] = useState(null);
+
+    const openOrderDetails = (order) => {
+        setSelectedOrder({
+            ...order,
+            statusLabel: statusLabels[order.status] || order.status,
+        });
+    };
 
     const handleResetFilters = () => {
         setSearchField('name');
@@ -241,7 +251,7 @@ const ManagerHome = () => {
                 </div>
 
                 <div className="mt-5 overflow-hidden rounded-2xl border border-[#ececec]">
-                    <div className="hidden grid-cols-[90px_180px_1.3fr_170px_220px] bg-[#f8f8f8] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#777] md:grid">
+                    <div className="hidden grid-cols-[72px_140px_minmax(0,1fr)_96px_200px] bg-[#f8f8f8] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#777] md:grid">
                         <p>Номер</p>
                         <p>Пользователь</p>
                         <p>Состав</p>
@@ -250,16 +260,51 @@ const ManagerHome = () => {
                     </div>
 
                     {paginatedOrders.length > 0 ? (
-                        paginatedOrders.map((order) => (
-                            <div key={order.id} className="border-t border-[#efefef] px-5 py-4 md:grid md:grid-cols-[90px_180px_1.3fr_170px_220px] md:items-center">
+                        paginatedOrders.map((order) => {
+                            const loginFull = order.user?.login || 'Гость';
+                            const emailFull = order.user?.email || '—';
+                            const itemsFull = order.items || '—';
+
+                            return (
+                            <div
+                                key={order.id}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => openOrderDetails(order)}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter' || event.key === ' ') {
+                                        event.preventDefault();
+                                        openOrderDetails(order);
+                                    }
+                                }}
+                                className="cursor-pointer border-t border-[#efefef] px-5 py-4 transition-colors hover:bg-[#fff8f7] md:grid md:grid-cols-[72px_140px_minmax(0,1fr)_96px_200px] md:items-center"
+                            >
                                 <p className="text-[15px] font-semibold text-[#1f1f1f]">#{order.id}</p>
-                                <div className="mt-2 md:mt-0">
-                                    <p className="text-[15px] font-semibold text-[#1f1f1f]">{order.user?.login || 'Гость'}</p>
-                                    <p className="text-[12px] text-[#666]">{order.user?.email || '—'}</p>
+                                <div
+                                    className="mt-2 min-w-0 md:mt-0"
+                                    title={`${loginFull} · ${emailFull}`}
+                                >
+                                    <p className="overflow-hidden text-ellipsis whitespace-nowrap text-[15px] font-semibold text-[#1f1f1f]">
+                                        {clipText(loginFull, 14)}
+                                    </p>
+                                    <p className="overflow-hidden text-ellipsis whitespace-nowrap text-[12px] text-[#666]">
+                                        {clipText(emailFull, 18)}
+                                    </p>
                                 </div>
-                                <p className="mt-2 text-[14px] text-[#3a3a3a] md:mt-0">{order.items || '—'}</p>
-                                <p className="mt-2 text-[15px] font-semibold text-[#3a3a3a] md:mt-0">{formatPrice(order.total)}</p>
-                                <div className="mt-2 md:mt-0">
+                                <p
+                                    className="mt-2 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[14px] text-[#3a3a3a] md:mt-0"
+                                    title={itemsFull}
+                                >
+                                    {clipText(itemsFull, 28)}
+                                </p>
+                                <p className="mt-2 whitespace-nowrap text-[15px] font-semibold text-[#3a3a3a] md:mt-0">
+                                    {formatPrice(order.total)}
+                                </p>
+                                <div
+                                    className="mt-2 cursor-default md:mt-0"
+                                    onClick={(event) => event.stopPropagation()}
+                                    onKeyDown={(event) => event.stopPropagation()}
+                                >
                                     <form action={`/manager/orders/${order.id}`} method="POST" className="flex items-center gap-2">
                                         <input type="hidden" name="_token" value={csrfToken} />
                                         <input type="hidden" name="_method" value="PATCH" />
@@ -280,7 +325,8 @@ const ManagerHome = () => {
                                     </form>
                                 </div>
                             </div>
-                        ))
+                            );
+                        })
                     ) : (
                         <div className="border-t border-[#efefef] px-5 py-8 text-center text-[15px] text-[#777]">
                             По выбранным параметрам заказы не найдены
@@ -523,6 +569,15 @@ const ManagerHome = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {selectedOrder && (
+                <OrderDetailsModal
+                    order={selectedOrder}
+                    statusLabel={selectedOrder.statusLabel}
+                    showCustomer
+                    onClose={() => setSelectedOrder(null)}
+                />
             )}
         </main>
     );

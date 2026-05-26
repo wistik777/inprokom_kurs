@@ -36,7 +36,7 @@ class ManagerController extends Controller
             ->where('status', '!=', 'active')
             ->with([
                 'user:id,login,email,phone',
-                'items.product:id,name',
+                'items.product:id,name,model',
             ])
             ->latest('id')
             ->get()
@@ -51,7 +51,10 @@ class ManagerController extends Controller
                         $qty = (int) $item->quantity;
 
                         return [
+                            'id' => $item->id,
                             'name' => $item->product->name,
+                            'model' => $item->product->model,
+                            'price' => $price,
                             'qty' => $qty,
                             'sum' => $price * $qty,
                         ];
@@ -70,6 +73,7 @@ class ManagerController extends Controller
                         'phone' => $order->user?->phone,
                     ],
                     'items' => $itemsDetailed->map(fn ($item) => $item['name'] . ' x' . $item['qty'])->implode(', '),
+                    'items_detailed' => $itemsDetailed->all(),
                     'total' => $itemsDetailed->sum('sum'),
                 ];
             })

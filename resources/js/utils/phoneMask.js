@@ -33,7 +33,20 @@ export const formatRuPhone = (value) => {
     return formatted;
 };
 
-export const applyPhoneMask = (event) => {
-    const nextValue = formatRuPhone(event.target.value);
-    event.target.value = nextValue;
+/** @param {Event | string} eventOrValue — событие input (onInput) или строка (controlled) */
+export const applyPhoneMask = (eventOrValue) => {
+    const isEvent =
+        eventOrValue &&
+        typeof eventOrValue === 'object' &&
+        'target' in eventOrValue &&
+        eventOrValue.target;
+
+    const raw = isEvent ? eventOrValue.target.value : String(eventOrValue ?? '');
+    const nextValue = formatRuPhone(raw);
+
+    if (isEvent) {
+        eventOrValue.target.value = nextValue;
+    }
+
+    return nextValue;
 };
