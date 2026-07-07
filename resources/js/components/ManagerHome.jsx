@@ -1,60 +1,27 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import OrderDetailsModal from './orders/OrderDetailsModal';
-import { clipText } from '../utils/clipText';
 
 const ITEMS_PER_PAGE = 12;
-const ORDERS_PER_PAGE = 10;
-
-const formatPrice = (value) => `${Number(value || 0).toFixed(2)}р`;
 
 const ManagerHome = () => {
     const products = Array.isArray(window.managerProducts) ? window.managerProducts : [];
     const categories = Array.isArray(window.managerCategories) ? window.managerCategories : [];
-    const orders = Array.isArray(window.managerOrders) ? window.managerOrders : [];
     const success = window.managerSuccess || '';
     const errors = window.errors || {};
     const old = window.managerFormOld || {};
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
-    const statusLabels = {
-        new: 'Новый',
-        processing: 'В обработке',
-        shipped: 'Отправлен',
-        delivered: 'Доставлен',
-        cancelled: 'Отменен',
-    };
 
     const [searchField, setSearchField] = useState('name');
     const [searchValue, setSearchValue] = useState('');
     const [sortMode, setSortMode] = useState('default');
     const [currentPage, setCurrentPage] = useState(1);
-    const [orderSearchField, setOrderSearchField] = useState('number');
-    const [orderSearchValue, setOrderSearchValue] = useState('');
-    const [orderStatusFilter, setOrderStatusFilter] = useState('all');
-    const [orderSortMode, setOrderSortMode] = useState('date_desc');
-    const [orderCurrentPage, setOrderCurrentPage] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(Object.keys(errors).length > 0);
     const [productToDelete, setProductToDelete] = useState(null);
     const [selectedFileName, setSelectedFileName] = useState('');
-    const [selectedOrder, setSelectedOrder] = useState(null);
-
-    const openOrderDetails = (order) => {
-        setSelectedOrder({
-            ...order,
-            statusLabel: statusLabels[order.status] || order.status,
-        });
-    };
 
     const handleResetFilters = () => {
         setSearchField('name');
         setSearchValue('');
         setSortMode('default');
-    };
-
-    const handleResetOrderFilters = () => {
-        setOrderSearchField('number');
-        setOrderSearchValue('');
-        setOrderStatusFilter('all');
-        setOrderSortMode('date_desc');
     };
 
     const filteredProducts = useMemo(() => {
@@ -68,11 +35,7 @@ const ManagerHome = () => {
             });
         }
 
-        if (sortMode === 'price_asc') {
-            result.sort((a, b) => Number(a.price) - Number(b.price));
-        } else if (sortMode === 'price_desc') {
-            result.sort((a, b) => Number(b.price) - Number(a.price));
-        } else if (sortMode === 'name_asc') {
+        if (sortMode === 'name_asc') {
             result.sort((a, b) => String(a.name).localeCompare(String(b.name), 'ru'));
         } else if (sortMode === 'name_desc') {
             result.sort((a, b) => String(b.name).localeCompare(String(a.name), 'ru'));
@@ -81,51 +44,11 @@ const ManagerHome = () => {
         return result;
     }, [products, searchField, searchValue, sortMode]);
 
-    const filteredOrders = useMemo(() => {
-        const normalizedQuery = orderSearchValue.trim().toLowerCase();
-        let result = [...orders];
-
-        if (orderStatusFilter !== 'all') {
-            result = result.filter((order) => order.status === orderStatusFilter);
-        }
-
-        if (normalizedQuery) {
-            result = result.filter((order) => {
-                if (orderSearchField === 'number') {
-                    return String(order.id).includes(normalizedQuery);
-                }
-
-                if (orderSearchField === 'user') {
-                    return String(order.user?.login || '').toLowerCase().includes(normalizedQuery);
-                }
-
-                return String(order.items || '').toLowerCase().includes(normalizedQuery);
-            });
-        }
-
-        if (orderSortMode === 'date_asc') {
-            result.sort((a, b) => a.id - b.id);
-        } else if (orderSortMode === 'date_desc') {
-            result.sort((a, b) => b.id - a.id);
-        } else if (orderSortMode === 'number_asc') {
-            result.sort((a, b) => a.id - b.id);
-        } else if (orderSortMode === 'number_desc') {
-            result.sort((a, b) => b.id - a.id);
-        }
-
-        return result;
-    }, [orders, orderSearchField, orderSearchValue, orderSortMode, orderStatusFilter]);
-
     const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
-    const orderTotalPages = Math.max(1, Math.ceil(filteredOrders.length / ORDERS_PER_PAGE));
 
     useEffect(() => {
         setCurrentPage(1);
     }, [searchField, searchValue, sortMode]);
-
-    useEffect(() => {
-        setOrderCurrentPage(1);
-    }, [orderSearchField, orderSearchValue, orderSortMode, orderStatusFilter]);
 
     useEffect(() => {
         if (currentPage > totalPages) {
@@ -133,21 +56,10 @@ const ManagerHome = () => {
         }
     }, [currentPage, totalPages]);
 
-    useEffect(() => {
-        if (orderCurrentPage > orderTotalPages) {
-            setOrderCurrentPage(orderTotalPages);
-        }
-    }, [orderCurrentPage, orderTotalPages]);
-
     const paginatedProducts = useMemo(() => {
         const start = (currentPage - 1) * ITEMS_PER_PAGE;
         return filteredProducts.slice(start, start + ITEMS_PER_PAGE);
     }, [filteredProducts, currentPage]);
-
-    const paginatedOrders = useMemo(() => {
-        const start = (orderCurrentPage - 1) * ORDERS_PER_PAGE;
-        return filteredOrders.slice(start, start + ORDERS_PER_PAGE);
-    }, [filteredOrders, orderCurrentPage]);
 
     const visiblePages = useMemo(() => {
         let start = Math.max(1, currentPage - 1);
@@ -160,36 +72,38 @@ const ManagerHome = () => {
         return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
     }, [currentPage, totalPages]);
 
-    const visibleOrderPages = useMemo(() => {
-        let start = Math.max(1, orderCurrentPage - 1);
-        let end = Math.min(orderTotalPages, start + 2);
-
-        if (end - start < 2) {
-            start = Math.max(1, end - 2);
-        }
-
-        return Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
-    }, [orderCurrentPage, orderTotalPages]);
-
     const goToPage = (page) => {
         setCurrentPage(Math.min(totalPages, Math.max(1, page)));
-    };
-
-    const goToOrderPage = (page) => {
-        setOrderCurrentPage(Math.min(orderTotalPages, Math.max(1, page)));
     };
 
     return (
         <main className="mx-auto w-full max-w-[1360px] px-6 py-10">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <h1 className="text-[34px] font-semibold text-[#1b1b1b]">Панель менеджера</h1>
-                <button
-                    type="button"
-                    onClick={() => setIsModalOpen(true)}
-                    className="btn-fill inline-flex h-[44px] min-w-[190px] items-center justify-center bg-white px-5 py-2 text-[14px] font-semibold"
-                >
-                    <span className="relative z-10">Добавить товар</span>
-                </button>
+                <div>
+                    <h1 className="text-[34px] font-semibold text-[#1b1b1b]">Панель менеджера</h1>
+                    <p className="mt-2 text-[15px] text-[#666]">Управление каталогом продукции и контентом сайта</p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                    <a
+                        href="/manager/content"
+                        className="btn-fill inline-flex h-[44px] min-w-[190px] items-center justify-center bg-white px-5 py-2 text-[14px] font-semibold"
+                    >
+                        <span className="relative z-10">Контент сайта</span>
+                    </a>
+                    <a
+                        href="/manager/inbox"
+                        className="btn-fill inline-flex h-[44px] min-w-[190px] items-center justify-center bg-white px-5 py-2 text-[14px] font-semibold"
+                    >
+                        <span className="relative z-10">Обращения клиентов</span>
+                    </a>
+                    <button
+                        type="button"
+                        onClick={() => setIsModalOpen(true)}
+                        className="btn-fill inline-flex h-[44px] min-w-[190px] items-center justify-center bg-white px-5 py-2 text-[14px] font-semibold"
+                    >
+                        <span className="relative z-10">Добавить продукцию</span>
+                    </button>
+                </div>
             </div>
 
             {success && (
@@ -198,166 +112,7 @@ const ManagerHome = () => {
                 </div>
             )}
 
-            <section className="mt-6 rounded-2xl border border-[#ececec] bg-white p-6 shadow-[0_10px_26px_rgba(0,0,0,0.05)]">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-[28px] font-semibold text-[#1b1b1b]">Заказы пользователей</h2>
-                </div>
-
-                <div className="mt-4 flex flex-wrap items-center gap-4">
-                    <select
-                        value={orderSearchField}
-                        onChange={(event) => setOrderSearchField(event.target.value)}
-                        className="h-[42px] w-[220px] border border-[#f4a8a2] bg-white px-3 text-[15px]"
-                    >
-                        <option value="number">По номеру...</option>
-                        <option value="user">По логину...</option>
-                        <option value="items">По составу...</option>
-                    </select>
-                    <input
-                        value={orderSearchValue}
-                        onChange={(event) => setOrderSearchValue(event.target.value)}
-                        placeholder="Введите значение..."
-                        className="h-[42px] w-[240px] border border-[#f4a8a2] bg-white px-3 text-[15px]"
-                    />
-                    <select
-                        value={orderStatusFilter}
-                        onChange={(event) => setOrderStatusFilter(event.target.value)}
-                        className="h-[42px] w-[220px] border border-[#f4a8a2] bg-white px-3 text-[15px]"
-                    >
-                        <option value="all">Все статусы</option>
-                        <option value="new">Новый</option>
-                        <option value="processing">В обработке</option>
-                        <option value="shipped">Отправлен</option>
-                        <option value="delivered">Доставлен</option>
-                        <option value="cancelled">Отменен</option>
-                    </select>
-                    <select
-                        value={orderSortMode}
-                        onChange={(event) => setOrderSortMode(event.target.value)}
-                        className="h-[42px] w-[240px] border border-[#f4a8a2] bg-white px-3 text-[15px]"
-                    >
-                        <option value="date_desc">Сначала новые</option>
-                        <option value="date_asc">Сначала старые</option>
-                        <option value="number_asc">Номер (по возрастанию)</option>
-                        <option value="number_desc">Номер (по убыванию)</option>
-                    </select>
-                    <button
-                        type="button"
-                        onClick={handleResetOrderFilters}
-                        className="btn-fill h-[42px] w-[150px] bg-white text-[13px] font-semibold"
-                    >
-                        <span className="relative z-10">СБРОСИТЬ</span>
-                    </button>
-                </div>
-
-                <div className="mt-5 overflow-hidden rounded-2xl border border-[#ececec]">
-                    <div className="hidden grid-cols-[72px_140px_minmax(0,1fr)_96px_200px] bg-[#f8f8f8] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#777] md:grid">
-                        <p>Номер</p>
-                        <p>Пользователь</p>
-                        <p>Состав</p>
-                        <p>Сумма</p>
-                        <p>Статус</p>
-                    </div>
-
-                    {paginatedOrders.length > 0 ? (
-                        paginatedOrders.map((order) => {
-                            const loginFull = order.user?.login || 'Гость';
-                            const emailFull = order.user?.email || '—';
-                            const itemsFull = order.items || '—';
-
-                            return (
-                            <div
-                                key={order.id}
-                                role="button"
-                                tabIndex={0}
-                                onClick={() => openOrderDetails(order)}
-                                onKeyDown={(event) => {
-                                    if (event.key === 'Enter' || event.key === ' ') {
-                                        event.preventDefault();
-                                        openOrderDetails(order);
-                                    }
-                                }}
-                                className="cursor-pointer border-t border-[#efefef] px-5 py-4 transition-colors hover:bg-[#fff8f7] md:grid md:grid-cols-[72px_140px_minmax(0,1fr)_96px_200px] md:items-center"
-                            >
-                                <p className="text-[15px] font-semibold text-[#1f1f1f]">#{order.id}</p>
-                                <div
-                                    className="mt-2 min-w-0 md:mt-0"
-                                    title={`${loginFull} · ${emailFull}`}
-                                >
-                                    <p className="overflow-hidden text-ellipsis whitespace-nowrap text-[15px] font-semibold text-[#1f1f1f]">
-                                        {clipText(loginFull, 14)}
-                                    </p>
-                                    <p className="overflow-hidden text-ellipsis whitespace-nowrap text-[12px] text-[#666]">
-                                        {clipText(emailFull, 18)}
-                                    </p>
-                                </div>
-                                <p
-                                    className="mt-2 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[14px] text-[#3a3a3a] md:mt-0"
-                                    title={itemsFull}
-                                >
-                                    {clipText(itemsFull, 28)}
-                                </p>
-                                <p className="mt-2 whitespace-nowrap text-[15px] font-semibold text-[#3a3a3a] md:mt-0">
-                                    {formatPrice(order.total)}
-                                </p>
-                                <div
-                                    className="mt-2 cursor-default md:mt-0"
-                                    onClick={(event) => event.stopPropagation()}
-                                    onKeyDown={(event) => event.stopPropagation()}
-                                >
-                                    <form action={`/manager/orders/${order.id}`} method="POST" className="flex items-center gap-2">
-                                        <input type="hidden" name="_token" value={csrfToken} />
-                                        <input type="hidden" name="_method" value="PATCH" />
-                                        <select
-                                            name="status"
-                                            defaultValue={order.status}
-                                            className="h-[36px] w-[130px] border border-[#FA4234] bg-white px-2 text-[13px] outline-none"
-                                        >
-                                            <option value="new">Новый</option>
-                                            <option value="processing">В обработке</option>
-                                            <option value="shipped">Отправлен</option>
-                                            <option value="delivered">Доставлен</option>
-                                            <option value="cancelled">Отменен</option>
-                                        </select>
-                                        <button type="submit" className="btn-fill h-[36px] min-w-[80px] bg-white px-3 text-[12px] font-semibold">
-                                            <span className="relative z-10">OK</span>
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                            );
-                        })
-                    ) : (
-                        <div className="border-t border-[#efefef] px-5 py-8 text-center text-[15px] text-[#777]">
-                            По выбранным параметрам заказы не найдены
-                        </div>
-                    )}
-                </div>
-
-                <div className="mt-6 flex flex-col items-center">
-                    <div className="flex items-center gap-4 text-[20px]">
-                        <button type="button" onClick={() => goToOrderPage(1)} className="cursor-pointer transition-colors hover:text-[#FA4234]">В начало</button>
-                        <button type="button" onClick={() => goToOrderPage(orderCurrentPage - 1)} className="cursor-pointer text-[26px] transition-colors hover:text-[#FA4234]" aria-label="Предыдущая страница заказов">&#8249;</button>
-                        <div className="flex items-center gap-2.5">
-                            {visibleOrderPages.map((page) => (
-                                <button
-                                    key={page}
-                                    type="button"
-                                    onClick={() => goToOrderPage(page)}
-                                    className={`cursor-pointer transition-colors ${orderCurrentPage === page ? 'text-[#FA4234]' : 'text-black hover:text-[#FA4234]'}`}
-                                >
-                                    {page}
-                                </button>
-                            ))}
-                        </div>
-                        <button type="button" onClick={() => goToOrderPage(orderCurrentPage + 1)} className="cursor-pointer text-[26px] transition-colors hover:text-[#FA4234]" aria-label="Следующая страница заказов">&#8250;</button>
-                        <button type="button" onClick={() => goToOrderPage(orderTotalPages)} className="cursor-pointer transition-colors hover:text-[#FA4234]">В конец</button>
-                    </div>
-                    <div className="mt-1.5 h-[2px] w-full max-w-[700px] bg-[#FA4234]" />
-                </div>
-            </section>
-
-            <div className="mt-20 flex items-center gap-4">
+            <div className="mt-8 flex items-center gap-4">
                 <select
                     value={searchField}
                     onChange={(event) => setSearchField(event.target.value)}
@@ -380,8 +135,6 @@ const ManagerHome = () => {
                     <option value="default">По умолчанию</option>
                     <option value="name_asc">Название (А-Я)</option>
                     <option value="name_desc">Название (Я-А)</option>
-                    <option value="price_asc">Цена (по возрастанию)</option>
-                    <option value="price_desc">Цена (по убыванию)</option>
                 </select>
                 <button
                     type="button"
@@ -393,21 +146,19 @@ const ManagerHome = () => {
             </div>
 
             <section className="mt-6 overflow-hidden rounded-2xl border border-[#ececec] bg-white shadow-[0_10px_26px_rgba(0,0,0,0.05)]">
-                <div className="hidden grid-cols-[80px_1.4fr_1fr_1fr_1fr] bg-[#f8f8f8] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#777] md:grid">
+                <div className="hidden grid-cols-[80px_1.4fr_1fr_1fr] bg-[#f8f8f8] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#777] md:grid">
                     <p>ID</p>
                     <p>Название</p>
                     <p>Модель</p>
-                    <p>Цена</p>
                     <p>Действие</p>
                 </div>
 
                 {paginatedProducts.length > 0 ? (
                     paginatedProducts.map((product) => (
-                        <div key={product.id} className="border-t border-[#efefef] px-5 py-4 md:grid md:grid-cols-[80px_1.4fr_1fr_1fr_1fr] md:items-center">
+                        <div key={product.id} className="border-t border-[#efefef] px-5 py-4 md:grid md:grid-cols-[80px_1.4fr_1fr_1fr] md:items-center">
                             <p className="text-[15px] text-[#1f1f1f]">{product.id}</p>
                             <p className="mt-2 text-[15px] font-semibold text-[#1f1f1f] md:mt-0">{product.name}</p>
                             <p className="mt-2 text-[15px] text-[#3a3a3a] md:mt-0">{product.model}</p>
-                            <p className="mt-2 text-[15px] text-[#3a3a3a] md:mt-0">{formatPrice(product.price)}</p>
                             <p className="mt-2 md:mt-0">
                                 <button
                                     type="button"
@@ -421,7 +172,7 @@ const ManagerHome = () => {
                     ))
                 ) : (
                     <div className="border-t border-[#efefef] px-5 py-8 text-center text-[15px] text-[#777]">
-                        По выбранным параметрам товары не найдены
+                        По выбранным параметрам продукция не найдена
                     </div>
                 )}
             </section>
@@ -452,7 +203,7 @@ const ManagerHome = () => {
                 <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 px-4" onClick={() => setIsModalOpen(false)}>
                     <div className="w-full max-w-[980px] rounded-2xl bg-white p-6 shadow-[0_18px_40px_rgba(0,0,0,0.25)]" onClick={(event) => event.stopPropagation()}>
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                            <h2 className="text-[30px] font-semibold text-[#1b1b1b]">Добавление товара</h2>
+                            <h2 className="text-[30px] font-semibold text-[#1b1b1b]">Добавление продукции</h2>
                             <button
                                 type="button"
                                 onClick={() => setIsModalOpen(false)}
@@ -476,13 +227,8 @@ const ManagerHome = () => {
                                     <input type="text" name="model" defaultValue={old.model || ''} className="h-[44px] w-full rounded-md border border-[#FA4234] bg-white px-3 text-[15px] outline-none" required />
                                     {errors.model && <p className="mt-1 text-[13px] text-red-500">{errors.model[0]}</p>}
                                 </div>
-                                <div>
-                                    <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-[#777]">Цена</label>
-                                    <input type="number" step="0.01" min="0" name="price" defaultValue={old.price || ''} className="h-[44px] w-full rounded-md border border-[#FA4234] bg-white px-3 text-[15px] outline-none" required />
-                                    {errors.price && <p className="mt-1 text-[13px] text-red-500">{errors.price[0]}</p>}
-                                </div>
                                 <div className="md:col-span-2">
-                                    <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-[#777]">Изображение товара</label>
+                                    <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-[#777]">Изображение</label>
                                     <div className="rounded-xl border border-[#FA4234] bg-white p-3">
                                         <div className="flex flex-wrap items-center gap-3">
                                             <label className="btn-fill inline-flex h-[40px] min-w-[170px] cursor-pointer items-center justify-center bg-white px-4 text-[13px] font-semibold">
@@ -499,13 +245,12 @@ const ManagerHome = () => {
                                                 {selectedFileName || 'Файл не выбран'}
                                             </p>
                                         </div>
-                                        <p className="mt-2 text-[12px] text-[#888]">Поддерживаются изображения JPG, PNG, WEBP до 5 МБ</p>
                                     </div>
                                     {errors.image_file && <p className="mt-1 text-[13px] text-red-500">{errors.image_file[0]}</p>}
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-[#777]">Описание</label>
-                                    <textarea name="description" rows={3} defaultValue={old.description || ''} className="w-full resize-none rounded-md border border-[#FA4234] bg-white px-3 py-2 text-[15px] outline-none" />
+                                    <textarea name="description" rows={3} defaultValue={old.description || ''} className="w-full rounded-md border border-[#FA4234] bg-white px-3 py-2 text-[15px] outline-none" />
                                 </div>
                                 <div className="md:col-span-2">
                                     <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-[#777]">Категории</p>
@@ -526,7 +271,7 @@ const ManagerHome = () => {
                             </div>
 
                             <button type="submit" className="btn-fill mt-6 h-[44px] min-w-[210px] bg-white px-6 py-2.5 text-[14px] font-semibold">
-                                <span className="relative z-10">Создать товар</span>
+                                <span className="relative z-10">Создать карточку</span>
                             </button>
                         </form>
                     </div>
@@ -544,7 +289,7 @@ const ManagerHome = () => {
                     >
                         <h3 className="text-[26px] font-semibold text-[#1b1b1b]">Подтверждение удаления</h3>
                         <p className="mt-3 text-[16px] text-[#444]">
-                            Точно ли вы хотите удалить товар <span className="font-semibold">"{productToDelete.name}"</span>?
+                            Точно ли вы хотите удалить продукцию <span className="font-semibold">"{productToDelete.name}"</span>?
                         </p>
 
                         <div className="mt-6 flex items-center justify-end gap-3">
@@ -569,15 +314,6 @@ const ManagerHome = () => {
                         </div>
                     </div>
                 </div>
-            )}
-
-            {selectedOrder && (
-                <OrderDetailsModal
-                    order={selectedOrder}
-                    statusLabel={selectedOrder.statusLabel}
-                    showCustomer
-                    onClose={() => setSelectedOrder(null)}
-                />
             )}
         </main>
     );

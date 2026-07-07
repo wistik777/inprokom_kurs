@@ -1,9 +1,4 @@
 import React from 'react';
-import { addToCart } from '../utils/cart';
-
-const formatPrice = (value) => {
-    return `${Number(value).toFixed(2)}р`;
-};
 
 const Card = ({ product }) => {
     const openProductPage = () => {
@@ -21,7 +16,7 @@ const Card = ({ product }) => {
                     openProductPage();
                 }
             }}
-            className="group relative w-full max-w-[230px] cursor-pointer overflow-hidden border border-[#FA4234] bg-white p-3.5 min-h-[275px]"
+            className="group relative w-full max-w-[230px] cursor-pointer overflow-hidden border border-[#FA4234] bg-white p-3.5 min-h-[275px] max-[768px]:mx-auto"
         >
             <div className="absolute inset-0 w-0 bg-[#FA4234] transition-all duration-500 ease-out group-hover:w-full" />
 
@@ -40,9 +35,6 @@ const Card = ({ product }) => {
                     <p className="mt-1.5 text-[12px] text-[#555]">
                         {product.model}
                     </p>
-                    <p className="mt-2.5 text-[18px] font-semibold">
-                        {formatPrice(product.price)}
-                    </p>
                 </div>
 
                 <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center px-3 text-center opacity-0 transition-all duration-500 ease-out group-hover:opacity-100">
@@ -55,7 +47,7 @@ const Card = ({ product }) => {
                     <p className="mt-3 max-h-[96px] overflow-hidden text-[13px] leading-5 text-white/95">
                         {product.description}
                     </p>
-                    <div className="mt-5 flex flex-col gap-2.5">
+                    <div className="mt-5">
                         <a
                             href={`/catalog/${product.id}`}
                             onClick={(event) => event.stopPropagation()}
@@ -63,16 +55,6 @@ const Card = ({ product }) => {
                         >
                             ПОДРОБНЕЕ
                         </a>
-                        <button
-                            type="button"
-                            onClick={(event) => {
-                                event.stopPropagation();
-                                addToCart(product).catch(() => {});
-                            }}
-                            className="cursor-pointer rounded-sm border border-white bg-transparent px-4 py-1.5 text-[11px] font-semibold text-white transition-all duration-500 ease-out hover:-translate-y-0.5 hover:bg-white hover:text-[#FA4234]"
-                        >
-                            В КОРЗИНУ
-                        </button>
                     </div>
                 </div>
             </div>

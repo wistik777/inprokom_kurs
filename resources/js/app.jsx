@@ -1,6 +1,11 @@
 import './bootstrap';
 import '../css/app.css';
 
+import { installSkipPreloaderOnFormSubmit, installSkipPreloaderOnInternalNavigation } from './utils/skipPreloader';
+
+installSkipPreloaderOnFormSubmit();
+installSkipPreloaderOnInternalNavigation();
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import Header from './components/Header';
@@ -12,14 +17,15 @@ import PressCenter from './components/PressCenter';
 import News from './components/News';
 import NewsArticle from './components/NewsArticle';
 import Vacancies from './components/Vacancies';
-import Auth from './components/Auth';
+import StaffLogin from './components/StaffLogin';
 import Catalog from './components/Catalog';
-import CartPage from './components/CartPage';
-import CartFlash from './components/CartFlash';
-import Profile from './components/Profile';
 import ProductPage from './components/ProductPage';
 import AdminHome from './components/AdminHome';
+import AdminSiteStats from './components/AdminSiteStats';
 import ManagerHome from './components/ManagerHome';
+import ManagerInbox from './components/ManagerInbox';
+import ManagerContent from './components/ManagerContent';
+import { initSitePreloader } from './utils/sitePreloader';
 
 
 const container = document.getElementById('app');
@@ -28,14 +34,18 @@ if (container) {
     const products = window.catalogProducts || [];
     const product = window.productData || null;
     const newsId = window.newsId || null;
-    const isAdminPage = page === 'admin-home' || page === 'manager-home';
+    const isStaffLoginPage = page === 'staff-login';
+    const isAdminPage = page === 'admin-home' || page === 'admin-statistics' || page === 'manager-home' || page === 'manager-inbox' || page === 'manager-content' || page === 'manager-news-preview';
+    const isManagerPreview = page === 'manager-news-preview';
 
     const root = createRoot(container);
     root.render(
         <div className="min-h-screen grid grid-rows-[auto_1fr_auto] overflow-x-hidden">
-            <Header adminMode={isAdminPage} overlapHero={page === 'home'} />
+            {!isStaffLoginPage && (
+                <Header adminMode={isAdminPage && !isManagerPreview} managerPreviewMode={isManagerPreview} overlapHero={page === 'home'} />
+            )}
             <main className="min-h-0 min-w-0">
-                {page !== 'home' && page !== 'contacts' && page !== 'about-company' && page !== 'press-center' && page !== 'press-news' && page !== 'press-news-article' && page !== 'vacancies' && page !== 'catalog' && page !== 'product' && page !== 'auth' && page !== 'cart' && page !== 'profile' && page !== 'admin-home' && page !== 'manager-home' && (
+                {page !== 'home' && page !== 'contacts' && page !== 'about-company' && page !== 'press-center' && page !== 'press-news' && page !== 'press-news-article' && page !== 'vacancies' && page !== 'catalog' && page !== 'product' && page !== 'staff-login' && page !== 'admin-home' && page !== 'admin-statistics' && page !== 'manager-home' && page !== 'manager-inbox' && page !== 'manager-content' && page !== 'manager-news-preview' && (
                     <div className="page-container my-12 flex w-full justify-center text-center min-[426px]:my-16 lg:my-[14vh]">
                         <div className="max-w-[980px]">
                             <p className="text-[28px] font-bold uppercase leading-[1.1] text-[#FA4234] drop-shadow-[0_2px_6px_rgba(250,66,52,0.18)] min-[426px]:text-[40px] lg:text-[52px]">
@@ -66,26 +76,35 @@ if (container) {
                     <Catalog products={products} />
                 ) : page === 'product' ? (
                     <ProductPage product={product} />
-                ) : page === 'auth' ? (
-                    <Auth />
-                ) : page === 'cart' ? (
-                    <CartPage />
-                ) : page === 'profile' ? (
-                    <Profile />
+                ) : page === 'staff-login' ? (
+                    <StaffLogin />
                 ) : page === 'admin-home' ? (
                     <AdminHome />
+                ) : page === 'admin-statistics' ? (
+                    <AdminSiteStats />
                 ) : page === 'manager-home' ? (
                     <ManagerHome />
+                ) : page === 'manager-inbox' ? (
+                    <ManagerInbox />
+                ) : page === 'manager-content' ? (
+                    <ManagerContent />
+                ) : page === 'manager-news-preview' ? (
+                    <NewsArticle newsId={newsId} previewMode />
                 ) : (
                     <div />
                 )}
             </main>
-            {!isAdminPage && <Footer />}
-            {(page === 'catalog' || page === 'cart') && <CartFlash />}
+            {!isAdminPage && !isStaffLoginPage && <Footer />}
         </div>
 
     );
 
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            initSitePreloader();
+        });
+    });
+} else {
+    initSitePreloader();
 }
-
 

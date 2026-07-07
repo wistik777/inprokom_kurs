@@ -45,7 +45,7 @@ function Home() {
     const newsCards = newsItems.map(({ id, title, date }) => ({ id, title, date }));
 
     const activityFooter = (
-        <div className="flex w-full flex-col gap-3 min-[426px]:flex-row min-[426px]:gap-4">
+        <div className="flex w-full flex-col items-center gap-3 max-[768px]:mx-auto max-[768px]:max-w-[360px] min-[426px]:flex-row min-[426px]:gap-4 min-[426px]:max-w-none">
             <a href="/catalog" className="btn-fill flex h-[48px] w-full items-center justify-center bg-white text-[13px] uppercase tracking-widest min-[426px]:h-[52px] min-[426px]:w-[190px] min-[426px]:text-[14px]">
                 <span className="relative z-10">Каталог</span>
             </a>
@@ -56,7 +56,7 @@ function Home() {
     );
 
     const newsFooter = (
-        <a href="/press-center/news" className="btnw-fill flex h-[56px] w-full max-w-[300px] p-4 items-center justify-center uppercase tracking-widest min-[426px]:h-[68px]">
+        <a href="/press-center/news" className="btnw-fill mx-auto flex h-[56px] w-full max-w-[300px] items-center justify-center p-4 uppercase tracking-widest max-[768px]:mx-auto min-[426px]:h-[68px]">
             Все новости компании
         </a>
     );
@@ -64,8 +64,8 @@ function Home() {
     return (
         <div className="overflow-x-hidden text-[#181818]">
             <section className="relative bg-[#FA4234] pt-[88px] pb-12 min-[769px]:pt-[200px] min-[769px]:pb-16 lg:min-h-[794px] lg:pb-0">
-                <div className="page-container flex min-h-[320px] items-center min-[426px]:min-h-[420px] lg:min-h-[inherit]">
-                    <h1 className="max-w-[740px] text-[32px] font-bold uppercase leading-[1.12] text-white min-[426px]:text-[48px] lg:text-[68px] lg:leading-[1.08]">
+                <div className="page-container flex min-h-[320px] items-center justify-center max-[768px]:text-center min-[426px]:min-h-[420px] lg:min-h-[inherit] lg:justify-start">
+                    <h1 className="max-w-[740px] text-[32px] font-bold uppercase leading-[1.12] text-white max-[768px]:mx-auto min-[426px]:text-[48px] lg:text-[68px] lg:leading-[1.08]">
                         Из сердца России к индустриальному лидерству
                     </h1>
                 </div>
@@ -154,7 +154,7 @@ function Home() {
                             variant="news"
                             footerLeft={newsFooter}
                             arrowTheme="light"
-                            footerClassName="mt-8 flex flex-col-reverse items-stretch justify-between gap-6 min-[426px]:mt-10 min-[426px]:flex-row min-[426px]:items-center"
+                            footerClassName="mt-8 flex flex-col-reverse items-center justify-center gap-6 max-[768px]:text-center min-[426px]:mt-10 min-[426px]:flex-row min-[426px]:items-center min-[426px]:justify-between"
                         />
                     </div>
                 </div>

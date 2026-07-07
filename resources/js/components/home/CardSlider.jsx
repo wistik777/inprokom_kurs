@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Card from "./Card";
 import { computeSliderMetrics } from "../../hooks/useSliderMetrics";
+import { useSliderSwipe } from "../../hooks/useSliderSwipe";
 
 const SLIDER_TRANSITION = "transform 1.4s cubic-bezier(0.16, 1, 0.3, 1)";
 
@@ -65,8 +66,15 @@ function CardSlider({
         setPage((current) => Math.min(current, maxPage));
     }, [maxPage]);
 
-    const goPrev = () => setPage((p) => Math.max(0, p - 1));
-    const goNext = () => setPage((p) => Math.min(maxPage, p + 1));
+    const goPrev = useCallback(() => setPage((p) => Math.max(0, p - 1)), []);
+    const goNext = useCallback(() => setPage((p) => Math.min(maxPage, p + 1)), [maxPage]);
+
+    const { viewportRef, dragOffset, isDragging } = useSliderSwipe({
+        onPrev: goPrev,
+        onNext: goNext,
+        page,
+        maxPage,
+    });
 
     const arrowClass =
         arrowTheme === "light" ? "home-slider-arrow home-slider-arrow--light" : "home-slider-arrow";
@@ -74,6 +82,7 @@ function CardSlider({
     return (
         <div ref={containerRef} className="home-slider w-full min-w-0">
             <div
+                ref={viewportRef}
                 className="home-slider__viewport w-full overflow-hidden"
                 style={{ minHeight: cardHeight > 0 ? `${cardHeight}px` : undefined }}
             >
@@ -81,8 +90,8 @@ function CardSlider({
                     className="flex will-change-transform"
                     style={{
                         gap: `${gap}px`,
-                        transform: `translate3d(-${offset}px, 0, 0)`,
-                        transition: SLIDER_TRANSITION,
+                        transform: `translate3d(-${Math.max(0, offset - dragOffset)}px, 0, 0)`,
+                        transition: isDragging ? "none" : SLIDER_TRANSITION,
                     }}
                 >
                     {items.map((card, index) => (
@@ -99,7 +108,7 @@ function CardSlider({
 
             <div className={`${footerClassName} w-full`}>
                 {footerLeft && <div className="w-full max-[425px]:w-full min-[426px]:w-auto">{footerLeft}</div>}
-                <div className="ml-auto flex shrink-0 items-center gap-4 text-[16px] min-[426px]:gap-5 min-[426px]:text-[18px]">
+                <div className="flex shrink-0 items-center justify-center gap-4 text-[16px] max-[768px]:mx-auto min-[426px]:ml-auto min-[426px]:justify-start min-[426px]:text-[18px]">
                     <span className={arrowTheme === "light" ? "text-white" : "text-[#707070]"}>
                         {formatPage(page + 1, totalPages)}
                     </span>

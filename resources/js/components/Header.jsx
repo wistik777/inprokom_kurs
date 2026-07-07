@@ -1,37 +1,36 @@
 import React, { useEffect, useState } from "react";
-import { getCartCount, loadCart } from "../utils/cart";
+import { isNavLinkActive, mainNavLinks } from "../config/siteNavigation";
 
 const MOBILE_BREAKPOINT = 768;
 
-const navLinks = [
-    { href: "/", label: "ГЛАВНАЯ" },
-    { href: "/about-company", label: "О КОМПАНИИ" },
-    { href: "/catalog", label: "КАТАЛОГ" },
-    { href: "/press-center", label: "ПРЕСС-ЦЕНТР" },
-    { href: "/contacts", label: "КОНТАКТЫ" },
-    { href: "/vacancies", label: "ВАКАНСИИ" },
-];
+const navLinks = mainNavLinks.map((link) => ({
+    ...link,
+    label: link.label.toUpperCase(),
+}));
 
 const navLinkClass =
     "whitespace-nowrap transition-all duration-300 ease-in-out hover:text-[#FA4234]";
 
-function Header({ adminMode = false, overlapHero = false }) {
+function getNavLinkClass(href, pathname, extra = "") {
+    const active = isNavLinkActive(href, pathname);
+    return [navLinkClass, active ? "nav-link--active" : "", extra].filter(Boolean).join(" ");
+}
+
+function Header({ adminMode = false, overlapHero = false, managerPreviewMode = false }) {
     const [menuOpen, setMenuOpen] = useState(false);
-    const [cartCount, setCartCount] = useState(0);
     const [hideMenuRow, setHideMenuRow] = useState(false);
+    const [currentPath, setCurrentPath] = useState(
+        () => (typeof window !== "undefined" ? window.location.pathname : "/")
+    );
     const [isMobile, setIsMobile] = useState(
         () => typeof window !== "undefined" && window.innerWidth <= MOBILE_BREAKPOINT
     );
-    const isGuest = !window.authUser;
 
     useEffect(() => {
-        setCartCount(getCartCount());
-        loadCart().then(() => setCartCount(getCartCount())).catch(() => {});
-
-        const refreshCartCount = () => setCartCount(getCartCount());
-        window.addEventListener("cart:updated", refreshCartCount);
-
-        return () => window.removeEventListener("cart:updated", refreshCartCount);
+        const syncPath = () => setCurrentPath(window.location.pathname);
+        syncPath();
+        window.addEventListener("popstate", syncPath);
+        return () => window.removeEventListener("popstate", syncPath);
     }, []);
 
     useEffect(() => {
@@ -71,11 +70,37 @@ function Header({ adminMode = false, overlapHero = false }) {
 
     const closeMenu = () => setMenuOpen(false);
 
+    const linkIsActive = (href) => isNavLinkActive(href, currentPath);
+
     const spacerHeight = hideMenuRow
         ? "max-[768px]:h-[72px] min-[769px]:h-[96px]"
         : overlapHero
           ? "h-0"
           : "max-[768px]:h-[72px] min-[769px]:max-[1024px]:h-[132px] min-[900px]:max-[1024px]:h-[148px] min-[1025px]:h-[180px]";
+
+    if (managerPreviewMode) {
+        return (
+            <>
+                <div className="h-[88px] w-full" />
+                <nav className="fixed inset-x-0 top-0 z-50 border-b border-[#ececec] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.06)]">
+                    <div className="mx-auto flex max-w-[1360px] flex-wrap items-center justify-between gap-3 px-6 py-4">
+                        <div>
+                            <p className="text-[12px] font-semibold uppercase tracking-wide text-[#FA4234]">Предпросмотр</p>
+                            <p className="text-[18px] font-semibold text-[#1b1b1b]">Просмотр новости</p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <a
+                                href="/manager/content"
+                                className="btn-fill inline-flex h-[44px] min-w-[180px] items-center justify-center bg-white px-5 py-2 text-[14px] font-semibold"
+                            >
+                                <span className="relative z-10">← К контенту</span>
+                            </a>
+                        </div>
+                    </div>
+                </nav>
+            </>
+        );
+    }
 
     if (adminMode) {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
@@ -119,33 +144,22 @@ function Header({ adminMode = false, overlapHero = false }) {
                         : "shadow-[0_2px_10px_rgba(0,0,0,0.08)]"
                 }`}
             >
-                {/* Мобильная шапка (≤768px) */}
                 <div className="min-[769px]:hidden">
                     <div className="flex min-h-[72px] items-center justify-between gap-3 px-4">
                         <a href="/" className="shrink-0" onClick={closeMenu}>
                             <img src="/img/logo.svg" alt="Инпроком" className="h-10 w-auto" />
                         </a>
-                        <div className="flex items-center gap-3">
-                            <a href="/cart" className="relative cursor-pointer" onClick={closeMenu}>
-                                <img src="/img/basket.svg" alt="Корзина" className="h-10 w-10" />
-                                {cartCount > 0 && (
-                                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#FA4234] px-1 text-[11px] font-semibold text-white">
-                                        {cartCount}
-                                    </span>
-                                )}
-                            </a>
-                            <button
-                                type="button"
-                                className={`header-burger flex ${menuOpen ? "header-burger--open" : ""}`}
-                                aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"}
-                                aria-expanded={menuOpen}
-                                onClick={() => setMenuOpen((open) => !open)}
-                            >
-                                <span className="header-burger__line" />
-                                <span className="header-burger__line" />
-                                <span className="header-burger__line" />
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            className={`header-burger flex ${menuOpen ? "header-burger--open" : ""}`}
+                            aria-label={menuOpen ? "Закрыть меню" : "Открыть меню"}
+                            aria-expanded={menuOpen}
+                            onClick={() => setMenuOpen((open) => !open)}
+                        >
+                            <span className="header-burger__line" />
+                            <span className="header-burger__line" />
+                            <span className="header-burger__line" />
+                        </button>
                     </div>
 
                     <div
@@ -157,42 +171,24 @@ function Header({ adminMode = false, overlapHero = false }) {
                                 <p className="mb-4 text-[13px] text-[#666]">
                                     info@inprokom.ru · 8 49244 7 75 34
                                 </p>
+                                <p className="header-mobile-menu__section-title">Разделы сайта</p>
                                 {navLinks.map((link) => (
                                     <a
                                         key={`mobile-${link.href}`}
                                         href={link.href}
+                                        className={linkIsActive(link.href) ? "nav-link--active" : ""}
+                                        aria-current={linkIsActive(link.href) ? "page" : undefined}
                                         tabIndex={menuOpen ? undefined : -1}
                                         onClick={closeMenu}
                                     >
                                         {link.label}
                                     </a>
                                 ))}
-                                {isGuest && (
-                                    <a
-                                        href="/auth"
-                                        className="btn-fill mt-6 flex h-[48px] w-full items-center justify-center bg-white text-[14px] uppercase tracking-widest"
-                                        tabIndex={menuOpen ? undefined : -1}
-                                        onClick={closeMenu}
-                                    >
-                                        <span className="relative z-10">Вход / Регистрация</span>
-                                    </a>
-                                )}
-                                {!isGuest && (
-                                    <a
-                                        href="/profile"
-                                        className="mt-6 block py-3 text-center text-[14px] font-semibold uppercase text-[#FA4234]"
-                                        tabIndex={menuOpen ? undefined : -1}
-                                        onClick={closeMenu}
-                                    >
-                                        Личный кабинет
-                                    </a>
-                                )}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Десктопная шапка (≥769px); компакт 769–1024px — в CSS */}
                 <div className="header-desktop-top relative mt-4 hidden min-h-[58px] items-center justify-around min-[769px]:flex">
                     <div
                         className={`header-desktop-nav-scroll absolute inset-0 z-[18] flex items-center justify-center gap-6 text-[16px] transition-opacity duration-300 ${
@@ -203,7 +199,12 @@ function Header({ adminMode = false, overlapHero = false }) {
                         aria-hidden={!hideMenuRow}
                     >
                         {navLinks.map((link) => (
-                            <a key={`top-${link.href}`} href={link.href} className={navLinkClass}>
+                            <a
+                                key={`top-${link.href}`}
+                                href={link.href}
+                                className={getNavLinkClass(link.href, currentPath)}
+                                aria-current={linkIsActive(link.href) ? "page" : undefined}
+                            >
                                 {link.label}
                             </a>
                         ))}
@@ -229,27 +230,6 @@ function Header({ adminMode = false, overlapHero = false }) {
                                 <p>8 49244 7 75 34</p>
                             </div>
                         </div>
-                        <a href="/cart" className="pointer-events-auto relative z-10 cursor-pointer">
-                            <img src="/img/basket.svg" alt="Корзина" className="h-[50px]" />
-                            {cartCount > 0 && (
-                                <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-[#FA4234] px-1 text-[12px] font-semibold text-white">
-                                    {cartCount}
-                                </span>
-                            )}
-                        </a>
-                        {isGuest && (
-                            <a
-                                href="/auth"
-                                className="btn-fill pointer-events-auto relative z-10 h-[44px] min-w-[190px] whitespace-nowrap bg-white px-4 py-2 text-center text-[14px] font-semibold"
-                            >
-                                <span className="relative z-10">Вход/Регистрация</span>
-                            </a>
-                        )}
-                        {!isGuest && (
-                            <a href="/profile" className="pointer-events-auto relative z-10 cursor-pointer">
-                                <img src="/img/profile.svg" alt="Профиль" className="h-[50px]" />
-                            </a>
-                        )}
                     </div>
                 </div>
 
@@ -262,7 +242,12 @@ function Header({ adminMode = false, overlapHero = false }) {
                 >
                     <div className="header-desktop-nav mb-[20px] flex justify-center gap-[72px] text-[21px] decoration-0 [&_a]:transition-all [&_a]:duration-300 [&_a]:ease-in-out [&_a:hover]:text-[#FA4234]">
                         {navLinks.map((link) => (
-                            <a key={`bottom-${link.href}`} href={link.href} className={navLinkClass}>
+                            <a
+                                key={`bottom-${link.href}`}
+                                href={link.href}
+                                className={getNavLinkClass(link.href, currentPath)}
+                                aria-current={linkIsActive(link.href) ? "page" : undefined}
+                            >
                                 {link.label}
                             </a>
                         ))}

@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from "react";
 import PressNewsCard from "./press/PressNewsCard";
+import NewsletterSubscribe from "./press/NewsletterSubscribe";
 import { newsItems, NEWS_PAGE_SIZE } from "../data/newsItems";
 
 function News() {
     const [visibleCount, setVisibleCount] = useState(NEWS_PAGE_SIZE);
     const [viewMode, setViewMode] = useState("grid");
     const [search, setSearch] = useState("");
-    const [subscribed, setSubscribed] = useState(false);
 
     const filteredNews = useMemo(() => {
         const query = search.trim().toLowerCase();
@@ -21,11 +21,6 @@ function News() {
     const featuredNews = visibleNews[0];
     const gridNews = viewMode === "grid" && featuredNews ? visibleNews.slice(1) : visibleNews;
     const canLoadMore = visibleCount < filteredNews.length;
-
-    const handleSubscribe = (event) => {
-        event.preventDefault();
-        setSubscribed(true);
-    };
 
     return (
         <div className="overflow-x-hidden">
@@ -58,19 +53,7 @@ function News() {
                             <p className="mt-3 text-[15px] leading-relaxed text-[#4B4B4B]">
                                 Получайте новости компании на электронную почту.
                             </p>
-                            <form className="mt-6" onSubmit={handleSubscribe}>
-                                <button
-                                    type="submit"
-                                    className="btn-fill flex h-[52px] w-full items-center justify-center bg-white text-[14px] uppercase tracking-widest"
-                                >
-                                    <span className="relative z-10">Подписаться</span>
-                                </button>
-                                {subscribed && (
-                                    <p className="mt-4 text-[14px] text-[#4B4B4B]">
-                                        Спасибо! Заявка принята.
-                                    </p>
-                                )}
-                            </form>
+                            <NewsletterSubscribe id="news-subscribe" className="mt-6" />
                         </div>
                     </div>
                 </div>
@@ -155,8 +138,8 @@ function News() {
                                     viewMode === "grid" && featuredNews ? "mt-10" : "mt-12"
                                 } ${
                                     viewMode === "grid"
-                                        ? "grid gap-6 min-[426px]:gap-8 md:grid-cols-2"
-                                        : "flex flex-col gap-5"
+                                        ? "press-news-grid grid gap-6 min-[426px]:gap-8 md:grid-cols-2"
+                                        : "flex flex-col items-center gap-5 max-[768px]:w-full"
                                 }`}
                             >
                                 {gridNews.map((item, index) => (
@@ -192,19 +175,6 @@ function News() {
                 </div>
             </section>
 
-            <section className="bg-[#ECECEC] py-12 min-[426px]:py-16">
-                <div className="page-container flex flex-col items-start justify-between gap-6 min-[426px]:flex-row min-[426px]:items-center">
-                    <p className="max-w-[560px] text-[16px] leading-relaxed text-[#4B4B4B] min-[426px]:text-[18px]">
-                        Нужна официальная информация для СМИ? Свяжитесь с пресс-службой НПП «Инпроком».
-                    </p>
-                    <a
-                        href="/press-center"
-                        className="btn-fill inline-flex h-[52px] min-w-[240px] items-center justify-center bg-white text-[14px] uppercase tracking-widest"
-                    >
-                        <span className="relative z-10">В пресс-центр</span>
-                    </a>
-                </div>
-            </section>
         </div>
     );
 }

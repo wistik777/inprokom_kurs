@@ -2,7 +2,7 @@ import React from "react";
 import PressNewsCard from "./press/PressNewsCard";
 import { getNewsById, getNewsUrl, newsItems } from "../data/newsItems";
 
-function NewsArticle({ newsId }) {
+function NewsArticle({ newsId, previewMode = false }) {
     const article = getNewsById(newsId);
 
     if (!article) {
@@ -12,12 +12,60 @@ function NewsArticle({ newsId }) {
                 <p className="mt-6 text-[16px] text-[#4B4B4B] min-[426px]:text-[18px]">
                     Возможно, ссылка устарела или материал был удалён.
                 </p>
-                <a
-                    href="/press-center/news"
-                    className="btn-fill mt-10 inline-flex h-[52px] items-center justify-center bg-white px-10 text-[14px] uppercase tracking-widest"
+                {previewMode ? (
+                    <a
+                        href="/manager/content"
+                        className="btn-fill mt-10 inline-flex h-[52px] items-center justify-center bg-white px-10 text-[14px] uppercase tracking-widest"
+                    >
+                        <span className="relative z-10">← К контенту</span>
+                    </a>
+                ) : (
+                    <a
+                        href="/press-center/news"
+                        className="btn-fill mt-10 inline-flex h-[52px] items-center justify-center bg-white px-10 text-[14px] uppercase tracking-widest"
+                    >
+                        <span className="relative z-10">К списку новостей</span>
+                    </a>
+                )}
+            </div>
+        );
+    }
+
+    if (previewMode) {
+        return (
+            <div className="overflow-x-hidden bg-[#F2F2F2]">
+                <section
+                    className="relative flex items-end bg-cover bg-center px-6 pb-10 pt-8 min-[426px]:px-10 min-[426px]:pb-14 min-[426px]:pt-10"
+                    style={{ backgroundImage: "url('/img/cart_fon.png')" }}
                 >
-                    <span className="relative z-10">К списку новостей</span>
-                </a>
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#181818]/92 via-[#FA4234]/88 to-[#c92e22]/85" />
+                    <div className="relative z-10 mx-auto w-full max-w-[980px]">
+                        <p className="inline-block border border-white/30 bg-white/10 px-4 py-2 text-[11px] uppercase tracking-[0.2em] text-white backdrop-blur-sm min-[426px]:text-[12px]">
+                            {article.date}
+                        </p>
+                        <h1 className="mt-5 max-w-[980px] text-[26px] font-bold uppercase leading-[1.2] text-white min-[426px]:mt-6 min-[426px]:text-[38px] lg:text-[44px]">
+                            {article.title}
+                        </h1>
+                    </div>
+                </section>
+
+                <section className="pb-14 pt-6 min-[426px]:pb-20 min-[426px]:pt-8">
+                    <div className="page-container">
+                        <article className="mx-auto max-w-[980px] bg-white px-6 py-8 shadow-[0_16px_48px_rgba(0,0,0,0.08)] min-[426px]:px-10 min-[426px]:py-12 lg:px-14 lg:py-14">
+                            <div className="news-article-lead border-l-4 border-[#FA4234] bg-[#FA4234]/5 px-5 py-6 min-[426px]:px-8 min-[426px]:py-7">
+                                <p className="text-[17px] font-semibold leading-[1.65] text-[#181818] min-[426px]:text-[19px]">
+                                    {article.content[0]}
+                                </p>
+                            </div>
+
+                            <div className="mt-8 space-y-7 text-[16px] leading-[1.8] text-[#4B4B4B] min-[426px]:mt-10 min-[426px]:space-y-8 min-[426px]:text-[17px] lg:text-[18px]">
+                                {article.content.slice(1).map((paragraph) => (
+                                    <p key={paragraph.slice(0, 48)}>{paragraph}</p>
+                                ))}
+                            </div>
+                        </article>
+                    </div>
+                </section>
             </div>
         );
     }

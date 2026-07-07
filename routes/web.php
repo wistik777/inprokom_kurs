@@ -3,17 +3,22 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CartController;
+use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\ManagerController;
-use App\Models\Cart;
+use App\Http\Controllers\VacancyApplicationController;
+use App\Http\Controllers\NewsletterController;
 use App\Models\Product;
+use App\Support\SiteContent;
+use App\Support\StaffAccess;
 
 Route::get('/', function () {
-    return view('home');
+    $siteNewsItems = SiteContent::publishedNews();
+
+    return view('home', compact('siteNewsItems'));
 });
 
-Route::get('/auth', function () {
-    return view('auth');
+Route::get(StaffAccess::loginPath(), function () {
+    return view('staff-login');
 });
 
 Route::get('/catalog', function () {
@@ -32,114 +37,74 @@ Route::get('/catalog/{product}', function (Product $product) {
     return view('product', compact('product'));
 })->whereNumber('product');
 
-Route::get('/cart', function () {
-    return view('cart');
-});
-Route::get('/cart/data', [CartController::class, 'data']);
-Route::post('/cart/items', [CartController::class, 'store']);
-Route::patch('/cart/items/{product}', [CartController::class, 'update']);
-Route::delete('/cart/items/{product}', [CartController::class, 'destroy']);
-Route::delete('/cart/items', [CartController::class, 'clear']);
-Route::post('/checkout', [CartController::class, 'checkout']);
-
-Route::get('/profile', function () {
-    if (!auth()->check()) {
-        return redirect('/auth');
-    }
-
-    $orders = Cart::query()
-        ->where('user_id', auth()->id())
-        ->where('status', '!=', 'active')
-        ->with(['items.product:id,name,model'])
-        ->latest('id')
-        ->get()
-        ->map(function (Cart $order) {
-            $itemsDetailed = $order->items
-                ->map(function ($item) {
-                    if (!$item->product) {
-                        return null;
-                    }
-
-                    $price = (float) $item->price_at_add;
-                    $qty = (int) $item->quantity;
-
-                    return [
-                        'id' => $item->id,
-                        'name' => $item->product->name,
-                        'model' => $item->product->model,
-                        'price' => $price,
-                        'qty' => $qty,
-                        'sum' => $price * $qty,
-                    ];
-                })
-                ->filter()
-                ->values();
-
-            $itemsText = $order->items
-                ->map(function ($item) {
-                    if (!$item->product) {
-                        return null;
-                    }
-
-                    return $item->product->name . ' x' . $item->quantity;
-                })
-                ->filter()
-                ->values()
-                ->implode(', ');
-
-            return [
-                'id' => $order->id,
-                'number' => $order->id,
-                'items' => $itemsText ?: 'Состав заказа недоступен',
-                'status' => $order->status,
-                'created_at' => optional($order->created_at)->format('d.m.Y H:i'),
-                'items_detailed' => $itemsDetailed->all(),
-                'total' => $itemsDetailed->sum('sum'),
-            ];
-        })
-        ->values()
-        ->all();
-
-    return view('profile', ['orders' => $orders]);
+Route::middleware('admin')->group(function () {
+    Route::get('/admin', [AdminController::class, 'index']);
+    Route::get('/admin/statistics', [AdminController::class, 'statistics']);
+    Route::get('/admin/create-manager', [AdminController::class, 'createManager']);
+    Route::post('/admin/create-manager', [AdminController::class, 'storeManager']);
+    Route::delete('/admin/managers/{manager}', [AdminController::class, 'destroyManager']);
+    Route::post('/admin/audit-logs/{auditLog}/rollback', [AdminController::class, 'rollbackAuditLog']);
 });
 
-Route::get('/admin', [AdminController::class, 'index']);
-Route::get('/admin/create-manager', [AdminController::class, 'createManager']);
-Route::post('/admin/create-manager', [AdminController::class, 'storeManager']);
-Route::delete('/admin/managers/{manager}', [AdminController::class, 'destroyManager']);
-Route::post('/admin/audit-logs/{auditLog}/rollback', [AdminController::class, 'rollbackAuditLog']);
-Route::get('/manager', [ManagerController::class, 'index']);
-Route::post('/manager/products', [ManagerController::class, 'storeProduct']);
-Route::delete('/manager/products/{product}', [ManagerController::class, 'destroyProduct']);
-Route::patch('/manager/orders/{order}', [ManagerController::class, 'updateOrderStatus']);
+Route::middleware('manager')->group(function () {
+    Route::get('/manager', [ManagerController::class, 'index']);
+    Route::post('/manager/products', [ManagerController::class, 'storeProduct']);
+    Route::delete('/manager/products/{product}', [ManagerController::class, 'destroyProduct']);
+    Route::get('/manager/inbox', [ManagerController::class, 'inbox']);
+    Route::patch('/manager/feedback/{message}', [ManagerController::class, 'updateFeedbackStatus']);
+    Route::patch('/manager/vacancy-applications/{application}', [ManagerController::class, 'updateVacancyStatus']);
+    Route::get('/manager/vacancy-applications/{application}/resume', [ManagerController::class, 'downloadVacancyResume']);
+    Route::get('/manager/content', [ManagerController::class, 'content']);
+    Route::get('/manager/content/news/{newsPost}/preview', [ManagerController::class, 'previewNews']);
+    Route::post('/manager/content/news', [ManagerController::class, 'storeNews']);
+    Route::patch('/manager/content/news/{newsPost}', [ManagerController::class, 'updateNews']);
+    Route::delete('/manager/content/news/{newsPost}', [ManagerController::class, 'destroyNews']);
+    Route::post('/manager/content/vacancies', [ManagerController::class, 'storeVacancy']);
+    Route::patch('/manager/content/vacancies/{vacancy}', [ManagerController::class, 'updateVacancy']);
+    Route::delete('/manager/content/vacancies/{vacancy}', [ManagerController::class, 'destroyVacancy']);
+});
 
 Route::get('/about-company', function () {
     return view('about-company');
 });
 
 Route::get('/press-center', function () {
-    return view('press-center');
+    $siteNewsItems = SiteContent::publishedNews();
+
+    return view('press-center', compact('siteNewsItems'));
 });
 
 Route::get('/press-center/news', function () {
-    return view('press-center-news');
+    $siteNewsItems = SiteContent::publishedNews();
+
+    return view('press-center-news', compact('siteNewsItems'));
 });
 
 Route::get('/press-center/news/{news}', function (int $news) {
-    return view('press-center-news-article', ['newsId' => $news]);
+    $siteNewsItems = SiteContent::publishedNews();
+
+    return view('press-center-news-article', [
+        'newsId' => $news,
+        'siteNewsItems' => $siteNewsItems,
+    ]);
 })->whereNumber('news');
 
 Route::get('/contacts', function () {
     return view('contacts');
 });
 
+Route::post('/contacts/feedback', [ContactMessageController::class, 'store']);
+
 Route::get('/vacancies', function () {
-    return view('vacancies');
+    $siteVacancies = SiteContent::activeVacancies();
+
+    return view('vacancies', compact('siteVacancies'));
 });
 
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/reg', [AuthController::class, 'register']);
-Route::post('/logout', [AuthController::class, 'logout']);
-Route::patch('/profile', [AuthController::class, 'updateProfile']);
+Route::post('/vacancies/apply', [VacancyApplicationController::class, 'store']);
 
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe']);
+
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout']);
 

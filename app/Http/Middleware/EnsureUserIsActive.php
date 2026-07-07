@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\StaffAccess;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,7 @@ class EnsureUserIsActive
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect('/auth')->withErrors([
+            return redirect(StaffAccess::loginPath())->withErrors([
                 'login' => 'Аккаунт заблокирован. Обратитесь к администратору системы.',
             ]);
         }

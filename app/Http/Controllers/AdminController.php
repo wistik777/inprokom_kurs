@@ -4,22 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\AdminAuditLog;
 use App\Models\User;
+use App\Services\AdminSiteStatistics;
+use App\Services\StatisticsPeriod;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
-    private function ensureAdmin(): void
-    {
-        if (!auth()->check() || !auth()->user()->isAdmin()) {
-            abort(403);
-        }
-    }
-
     public function index()
     {
-        $this->ensureAdmin();
-
         $managers = User::query()
             ->where('rule', 'manager')
             ->latest('id')
@@ -63,17 +56,23 @@ class AdminController extends Controller
         ]);
     }
 
+    public function statistics(Request $request, AdminSiteStatistics $siteStatistics)
+    {
+        $period = StatisticsPeriod::normalize($request->query('period'));
+
+        return view('admin.statistics', [
+            'siteStats' => $siteStatistics->build($period),
+            'selectedPeriod' => $period,
+        ]);
+    }
+
     public function createManager()
     {
-        $this->ensureAdmin();
-
         return redirect('/admin');
     }
 
     public function storeManager(Request $request)
     {
-        $this->ensureAdmin();
-
         $validated = $request->validate([
             'login' => 'required|min:6|unique:users,login',
             'email' => 'required|email|unique:users,email',
@@ -112,8 +111,6 @@ class AdminController extends Controller
 
     public function destroyManager(User $manager)
     {
-        $this->ensureAdmin();
-
         if ($manager->rule !== 'manager') {
             return redirect('/admin')->with('success', 'Удалять можно только менеджеров');
         }
@@ -134,8 +131,6 @@ class AdminController extends Controller
 
     public function rollbackAuditLog(AdminAuditLog $auditLog)
     {
-        $this->ensureAdmin();
-
         if ($auditLog->reverted_at) {
             return redirect('/admin')->with('success', 'Это действие уже было откачено');
         }

@@ -90,10 +90,18 @@ const rawNewsItems = [
     },
 ];
 
-export const newsItems = rawNewsItems.map((item) => ({
-    ...item,
-    content: buildContent(item.title),
-}));
+function resolveNewsItems() {
+    if (typeof window !== "undefined" && Array.isArray(window.siteNewsItems) && window.siteNewsItems.length > 0) {
+        return window.siteNewsItems;
+    }
+
+    return rawNewsItems.map((item) => ({
+        ...item,
+        content: buildContent(item.title),
+    }));
+}
+
+export const newsItems = resolveNewsItems();
 
 export function getNewsById(id) {
     const numericId = Number(id);

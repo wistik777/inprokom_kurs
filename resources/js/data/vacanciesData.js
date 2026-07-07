@@ -19,7 +19,7 @@ export const vacancyBenefits = [
     },
 ];
 
-export const vacancies = [
+const staticVacancies = [
     {
         id: 1,
         title: "Инженер-конструктор",
@@ -211,3 +211,13 @@ export const vacancies = [
         ],
     },
 ];
+
+function resolveVacancies() {
+    if (typeof window !== "undefined" && Array.isArray(window.siteVacancies) && window.siteVacancies.length > 0) {
+        return window.siteVacancies;
+    }
+
+    return staticVacancies;
+}
+
+export const vacancies = resolveVacancies();

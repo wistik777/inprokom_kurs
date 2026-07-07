@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import { applyPhoneMask } from "../utils/phoneMask";
+import { markSkipSitePreloader } from "../utils/skipPreloader";
+
+const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content || "";
 
 function Contacts() {
     const [form, setForm] = useState({
@@ -9,16 +12,58 @@ function Contacts() {
         message: "",
     });
     const [submitted, setSubmitted] = useState(false);
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (field) => (event) => {
         const value = field === "phone" ? applyPhoneMask(event.target.value) : event.target.value;
         setForm((prev) => ({ ...prev, [field]: value }));
+        if (error) setError("");
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
-        setSubmitted(true);
-        setForm({ name: "", email: "", phone: "", message: "" });
+        setError("");
+        setLoading(true);
+
+        try {
+            const response = await fetch("/contacts/feedback", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    "X-CSRF-TOKEN": getCsrfToken(),
+                },
+                body: JSON.stringify({
+                    name: form.name.trim(),
+                    email: form.email.trim(),
+                    phone: form.phone.trim(),
+                    message: form.message.trim(),
+                }),
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                const serverError =
+                    data.errors?.message?.[0] ||
+                    data.errors?.email?.[0] ||
+                    data.errors?.name?.[0] ||
+                    data.message ||
+                    "Не удалось отправить сообщение";
+                setError(serverError);
+                return;
+            }
+
+            setSubmitted(true);
+            markSkipSitePreloader();
+            setForm({ name: "", email: "", phone: "", message: "" });
+        } catch {
+            setError("Не удалось связаться с сервером. Попробуйте позже.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const inputClass =
@@ -87,7 +132,7 @@ function Contacts() {
                     <div>
                         <h2 className="text-center text-[26px] font-bold uppercase min-[426px]:text-[32px] lg:text-[36px]">Обратная связь</h2>
 
-                        <form className="mt-10 space-y-5" onSubmit={handleSubmit}>
+                        <form className="mt-10 space-y-5" onSubmit={handleSubmit} noValidate>
                             <input
                                 type="text"
                                 name="name"
@@ -95,6 +140,7 @@ function Contacts() {
                                 value={form.name}
                                 onChange={handleChange("name")}
                                 required
+                                disabled={loading}
                                 className={`${inputClass} h-[55px]`}
                             />
                             <input
@@ -104,6 +150,7 @@ function Contacts() {
                                 value={form.email}
                                 onChange={handleChange("email")}
                                 required
+                                disabled={loading}
                                 className={`${inputClass} h-[55px]`}
                             />
                             <input
@@ -112,6 +159,7 @@ function Contacts() {
                                 placeholder="Телефон"
                                 value={form.phone}
                                 onChange={handleChange("phone")}
+                                disabled={loading}
                                 className={`${inputClass} h-[55px]`}
                             />
                             <textarea
@@ -120,11 +168,13 @@ function Contacts() {
                                 value={form.message}
                                 onChange={handleChange("message")}
                                 required
+                                disabled={loading}
                                 rows={6}
-                                className={`${inputClass} min-h-[180px] resize-none py-4`}
+                                className={`${inputClass} min-h-[180px] py-4`}
                             />
 
-                            {submitted && (
+                            {error && <p className="text-[16px] text-[#FA4234]">{error}</p>}
+                            {submitted && !error && (
                                 <p className="text-[16px] text-white/80">
                                     Спасибо! Сообщение отправлено. Мы свяжемся с вами в ближайшее время.
                                 </p>
@@ -132,9 +182,10 @@ function Contacts() {
 
                             <button
                                 type="submit"
-                                className="btn-fill mt-2 h-[52px] w-full bg-white text-[14px] uppercase tracking-widest"
+                                disabled={loading}
+                                className="btn-fill mt-2 h-[52px] w-full bg-white text-[14px] uppercase tracking-widest disabled:opacity-60"
                             >
-                                <span className="relative z-10">Отправить</span>
+                                <span className="relative z-10">{loading ? "Отправка…" : "Отправить"}</span>
                             </button>
                         </form>
                     </div>

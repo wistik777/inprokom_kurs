@@ -72,11 +72,7 @@ const Catalog = ({ products }) => {
             });
         }
 
-        if (sortMode === 'price_asc') {
-            result.sort((a, b) => Number(a.price) - Number(b.price));
-        } else if (sortMode === 'price_desc') {
-            result.sort((a, b) => Number(b.price) - Number(a.price));
-        } else if (sortMode === 'name_asc') {
+        if (sortMode === 'name_asc') {
             result.sort((a, b) => String(a.name).localeCompare(String(b.name), 'ru'));
         } else if (sortMode === 'name_desc') {
             result.sort((a, b) => String(b.name).localeCompare(String(a.name), 'ru'));
@@ -119,7 +115,7 @@ const Catalog = ({ products }) => {
 
     return (
         <main className="page-container w-full max-w-full pb-12 pt-4 min-[426px]:pb-16 min-[426px]:pt-6 lg:ml-60 lg:max-w-[calc(100%-15rem)] lg:pr-8">
-            <div className="flex flex-col items-start gap-6 lg:flex-row lg:gap-4">
+            <div className="flex flex-col items-start gap-6 max-[768px]:items-center lg:flex-row lg:gap-4">
                 <aside className="hidden w-full shrink-0 bg-white p-3 lg:block lg:w-[270px]">
                     <h2 className="mb-2 text-[18px] font-semibold uppercase">Категории</h2>
                     <ul>
@@ -156,13 +152,13 @@ const Catalog = ({ products }) => {
                 </aside>
 
                 <div className="w-full flex-1 lg:ml-[6%]">
-                    <h2 className="mb-3 text-[22px] font-semibold uppercase min-[426px]:text-[28px]">
-                        {selectedGenre ? `Все товары: ${selectedGenre}` : 'Все товары'}
+                    <h2 className="mb-3 w-full text-[22px] font-semibold uppercase max-[768px]:text-center min-[426px]:text-[28px]">
+                        {selectedGenre ? `Продукция: ${selectedGenre}` : 'Вся продукция'}
                     </h2>
 
                     <div className="mb-6 bg-white px-0 py-4">
 
-                        <div className="flex flex-col gap-3 min-[426px]:flex-row min-[426px]:flex-wrap min-[426px]:items-center min-[426px]:gap-4">
+                        <div className="flex w-full flex-col items-center gap-3 max-[768px]:max-w-[360px] min-[426px]:flex-row min-[426px]:flex-wrap min-[426px]:items-center min-[426px]:gap-4 min-[426px]:max-w-none">
                             <select
                                 value={searchField}
                                 onChange={(e) => setSearchField(e.target.value)}
@@ -185,8 +181,6 @@ const Catalog = ({ products }) => {
                                 <option value="default">По умолчанию</option>
                                 <option value="name_asc">Название (А-Я)</option>
                                 <option value="name_desc">Название (Я-А)</option>
-                                <option value="price_asc">Цена (по возрастанию)</option>
-                                <option value="price_desc">Цена (по убыванию)</option>
                             </select>
                             <button
                                 type="button"
@@ -198,7 +192,7 @@ const Catalog = ({ products }) => {
                         </div>
                     </div>
 
-                    <section className="grid flex-1 grid-cols-1 justify-items-stretch gap-x-4 gap-y-4 min-[426px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+                    <section className="catalog-product-grid grid flex-1 grid-cols-1 justify-items-stretch gap-x-4 gap-y-4 min-[426px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                         {paginatedProducts.map((product) => (
                             <Card key={product.id} product={product} />
                         ))}

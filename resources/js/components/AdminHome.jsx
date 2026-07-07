@@ -46,13 +46,21 @@ const AdminHome = () => {
         <main className="mx-auto w-full max-w-[1220px] px-6 py-10">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-[34px] font-semibold text-[#1b1b1b]">Админ-панель</h1>
-                <button
-                    type="button"
-                    onClick={() => setIsModalOpen(true)}
-                    className="btn-fill inline-flex h-[44px] min-w-[190px] items-center justify-center bg-white px-5 py-2 text-[14px] font-semibold"
-                >
-                    <span className="relative z-10">Добавить менеджера</span>
-                </button>
+                <div className="flex flex-wrap gap-3">
+                    <a
+                        href="/admin/statistics"
+                        className="btn-fill inline-flex h-[44px] min-w-[190px] items-center justify-center bg-white px-5 py-2 text-[14px] font-semibold"
+                    >
+                        <span className="relative z-10">Статистика сайта</span>
+                    </a>
+                    <button
+                        type="button"
+                        onClick={() => setIsModalOpen(true)}
+                        className="btn-fill inline-flex h-[44px] min-w-[190px] items-center justify-center bg-white px-5 py-2 text-[14px] font-semibold"
+                    >
+                        <span className="relative z-10">Добавить менеджера</span>
+                    </button>
+                </div>
             </div>
 
             {success && (

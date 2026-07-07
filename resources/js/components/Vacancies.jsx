@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from "react";
 import VacancyCard from "./vacancies/VacancyCard";
+import VacancyResumeUpload, { validateResumeFile } from "./vacancies/VacancyResumeUpload";
 import { applyPhoneMask } from "../utils/phoneMask";
+import { markSkipSitePreloader } from "../utils/skipPreloader";
 import { vacancies, vacancyBenefits, VACANCY_PAGE_SIZE } from "../data/vacanciesData";
 
 function Vacancies() {
@@ -14,7 +16,10 @@ function Vacancies() {
         position: "",
         message: "",
     });
+    const [resumeFile, setResumeFile] = useState(null);
     const [submitted, setSubmitted] = useState(false);
+    const [submitError, setSubmitError] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const filteredVacancies = useMemo(() => {
         const query = search.trim().toLowerCase();
@@ -48,10 +53,72 @@ function Vacancies() {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
-        setSubmitted(true);
-        setForm({ name: "", email: "", phone: "", position: "", message: "" });
+        setSubmitError("");
+
+        if (!resumeFile) {
+            setSubmitError("Прикрепите файл резюме (TXT, PDF, DOC или DOCX, до 2 МБ)");
+            return;
+        }
+
+        const fileError = validateResumeFile(resumeFile);
+        if (fileError) {
+            setSubmitError(fileError);
+            return;
+        }
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
+        const body = new FormData();
+        body.append("name", form.name.trim());
+        body.append("email", form.email.trim());
+        body.append("phone", form.phone.trim());
+        body.append("position", form.position);
+        body.append("message", form.message.trim());
+        body.append("resume", resumeFile);
+
+        setLoading(true);
+
+        try {
+            const response = await fetch("/vacancies/apply", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    Accept: "application/json",
+                    "X-CSRF-TOKEN": csrfToken,
+                },
+                body,
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                const serverError =
+                    data.errors?.resume?.[0] ||
+                    data.errors?.name?.[0] ||
+                    data.errors?.email?.[0] ||
+                    data.errors?.phone?.[0] ||
+                    data.message ||
+                    "Не удалось отправить отклик";
+                setSubmitError(serverError);
+                return;
+            }
+
+            setSubmitted(true);
+            markSkipSitePreloader();
+            setForm({ name: "", email: "", phone: "", position: "", message: "" });
+            setResumeFile(null);
+            event.target.reset();
+        } catch {
+            setSubmitError("Не удалось связаться с сервером. Попробуйте позже.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResumeChange = (file) => {
+        setResumeFile(file);
+        if (submitError) setSubmitError("");
     };
 
     const inputClass =
@@ -235,40 +302,64 @@ function Vacancies() {
                             onChange={handleChange("phone")}
                             className={inputClass}
                         />
-                        <select
-                            required
-                            value={form.position}
-                            onChange={handleChange("position")}
-                            className={`${inputClass} appearance-none`}
-                        >
-                            <option value="" className="text-[#333]">
-                                Выберите вакансию
-                            </option>
-                            {vacancies.map((item) => (
-                                <option key={item.id} value={item.title} className="text-[#333]">
-                                    {item.title}
-                                </option>
-                            ))}
-                            <option value="Другое" className="text-[#333]">
-                                Другое / резюме в резерв
-                            </option>
-                        </select>
+                        <div className="vacancy-select">
+                            
+                            <div className="vacancy-select__wrap">
+                                <select
+                                    id="vacancy-position"
+                                    required
+                                    value={form.position}
+                                    onChange={handleChange("position")}
+                                    className={`vacancy-select__field ${!form.position ? "vacancy-select__field--placeholder" : ""}`}
+                                >
+                                    <option value="" className="text-[#333]">
+                                        Выберите вакансию из списка
+                                    </option>
+                                    {vacancies.map((item) => (
+                                        <option key={item.id} value={item.title} className="text-[#333]">
+                                            {item.title}
+                                        </option>
+                                    ))}
+                                    <option value="Другое" className="text-[#333]">
+                                        Другое / резюме в резерв
+                                    </option>
+                                </select>
+                                <span className="vacancy-select__arrow" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
+                                        <path
+                                            d="M6 9l6 6 6-6"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
+                                </span>
+                            </div>
+                        </div>
                         <textarea
                             rows={4}
                             placeholder="Сопроводительное письмо"
                             value={form.message}
                             onChange={handleChange("message")}
-                            className={`${inputClass} resize-none`}
+                            className={inputClass}
+                        />
+                        <VacancyResumeUpload
+                            file={resumeFile}
+                            onChange={handleResumeChange}
+                            disabled={loading}
                         />
                         <button
                             type="submit"
-                            className="btn-fill inline-flex h-[52px] w-full items-center justify-center bg-[#2B2B2B] text-[14px] uppercase tracking-widest"
+                            disabled={loading}
+                            className="btn-fill inline-flex h-[52px] w-full items-center justify-center bg-[#2B2B2B] text-[14px] uppercase tracking-widest disabled:opacity-60"
                         >
-                            <span className="relative z-10">Отправить</span>
+                            <span className="relative z-10">{loading ? "Отправка…" : "Отправить"}</span>
                         </button>
-                        {submitted && (
-                            <p className="text-[16px] text-[#FA4234]">
-                                Спасибо! Ваш отклик принят, мы свяжемся с вами в ближайшее время.
+                        {submitError && <p className="text-[16px] text-[#FA4234]">{submitError}</p>}
+                        {submitted && !submitError && (
+                            <p className="text-[16px] text-white/90">
+                                Спасибо! Ваш отклик с резюме принят, мы свяжемся с вами в ближайшее время.
                             </p>
                         )}
                     </form>
