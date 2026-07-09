@@ -33,8 +33,14 @@ function AppLayout({ children, showHeader = true, showFooter = true, headerProps
 
 function NavigationPreloaderBridge() {
     const location = useLocation();
+    const isFirstRender = React.useRef(true);
 
     React.useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+
         markSkipSitePreloader();
     }, [location.pathname]);
 
@@ -120,14 +126,7 @@ function App() {
                         </AppLayout>
                     }
                 />
-                <Route
-                    path={`/${staffPath}`}
-                    element={
-                        <AppLayout showFooter={false}>
-                            <StaffLogin />
-                        </AppLayout>
-                    }
-                />
+                <Route path={`/${staffPath}`} element={<StaffLogin />} />
                 <Route
                     path="/admin"
                     element={

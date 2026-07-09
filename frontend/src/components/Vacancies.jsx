@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import VacancyCard from "./vacancies/VacancyCard";
 import VacancyResumeUpload, { validateResumeFile } from "./vacancies/VacancyResumeUpload";
 import { api, ApiError } from "../api/client";
@@ -8,7 +8,7 @@ import { useVacancyList } from "../hooks/useVacancies";
 import { vacancyBenefits, VACANCY_PAGE_SIZE } from "../data/vacanciesData";
 
 function Vacancies() {
-    const { vacancies, loading: vacanciesLoading } = useVacancyList();
+    const { vacancies } = useVacancyList();
     const [visibleCount, setVisibleCount] = useState(VACANCY_PAGE_SIZE);
     const [selectedVacancy, setSelectedVacancy] = useState(null);
     const [search, setSearch] = useState("");
@@ -32,14 +32,26 @@ function Vacancies() {
 
         return vacancies.filter(
             (item) =>
-                item.title.toLowerCase().includes(query) ||
-                item.department.toLowerCase().includes(query) ||
-                item.short.toLowerCase().includes(query)
+                String(item.title ?? "").toLowerCase().includes(query) ||
+                String(item.department ?? "").toLowerCase().includes(query) ||
+                String(item.short ?? "").toLowerCase().includes(query)
         );
-    }, [search]);
+    }, [search, vacancies]);
 
     const visibleVacancies = filteredVacancies.slice(0, visibleCount);
     const canLoadMore = visibleCount < filteredVacancies.length;
+    const formVacancyOptions = vacancies;
+
+    useEffect(() => {
+        if (!form.position || form.position === "Другое / резерв") {
+            return;
+        }
+
+        const stillAvailable = vacancies.some((item) => item.title === form.position);
+        if (!stillAvailable) {
+            setForm((prev) => ({ ...prev, position: "" }));
+        }
+    }, [vacancies, form.position]);
 
     const scrollToForm = () => {
         document.getElementById("vacancy-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -307,12 +319,12 @@ function Vacancies() {
                                     <option value="" className="text-[#333]">
                                         Выберите вакансию из списка
                                     </option>
-                                    {vacancies.map((item) => (
+                                    {formVacancyOptions.map((item) => (
                                         <option key={item.id} value={item.title} className="text-[#333]">
                                             {item.title}
                                         </option>
                                     ))}
-                                    <option value="Другое" className="text-[#333]">
+                                    <option value="Другое / резерв" className="text-[#333]">
                                         Другое / резюме в резерв
                                     </option>
                                 </select>

@@ -33,12 +33,8 @@ const ProductPage = () => {
         };
     }, [productId]);
 
-    if (loading) {
-        return (
-            <main className="mx-auto w-full max-w-[1200px] px-6 py-12">
-                <p className="text-[16px] text-[#666]">Загрузка…</p>
-            </main>
-        );
+    if (loading && !product) {
+        return null;
     }
 
     if (!product) {

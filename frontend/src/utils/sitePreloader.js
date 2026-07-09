@@ -1,6 +1,7 @@
 import { markSkipSitePreloader, shouldSkipSitePreloader } from './skipPreloader';
 
 const MIN_VISIBLE_MS = 700;
+const MAX_VISIBLE_MS = 4000;
 const startedAt = performance.now();
 
 function waitForWindowLoad() {
@@ -70,10 +71,26 @@ export function initSitePreloader() {
         return;
     }
 
+    let finished = false;
+
+    const safeFinish = () => {
+        if (finished) {
+            return;
+        }
+
+        finished = true;
+        finishPreloader(preloader);
+    };
+
+    const maxTimer = window.setTimeout(safeFinish, MAX_VISIBLE_MS);
+
     Promise.all([waitForWindowLoad(), waitForFonts()]).then(() => {
         const elapsed = performance.now() - startedAt;
         const delay = Math.max(0, MIN_VISIBLE_MS - elapsed);
 
-        window.setTimeout(() => finishPreloader(preloader), delay);
+        window.setTimeout(() => {
+            window.clearTimeout(maxTimer);
+            safeFinish();
+        }, delay);
     });
 }

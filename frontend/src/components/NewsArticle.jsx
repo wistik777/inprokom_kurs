@@ -26,12 +26,8 @@ function NewsArticle({ previewMode = false }) {
 
     const loading = listLoading || articleLoading;
 
-    if (loading) {
-        return (
-            <div className="page-container py-16 text-center min-[426px]:py-24">
-                <p className="text-[16px] text-[#666]">Загрузка новости…</p>
-            </div>
-        );
+    if (loading && !article) {
+        return null;
     }
 
     if (!article) {

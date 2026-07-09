@@ -6,7 +6,7 @@ import { useNewsItems } from "../hooks/useNews";
 import { PRESS_PREVIEW_COUNT } from "../data/newsItems";
 
 function PressCenter() {
-    const { newsItems, loading } = useNewsItems();
+    const { newsItems } = useNewsItems();
     const previewNews = newsItems.slice(0, PRESS_PREVIEW_COUNT);
 
     const scrollToSubscribe = () => {
@@ -16,10 +16,6 @@ function PressCenter() {
 
     return (
         <div>
-            {loading ? (
-                <div className="page-container py-20 text-center text-[16px] text-[#666]">Загрузка…</div>
-            ) : (
-                <>
             <section className="bg-white py-12 text-[#181818] min-[426px]:py-16 lg:py-20">
                 <div className="page-container">
                     <h1 className="section-title">Пресс-центр</h1>
@@ -78,8 +74,6 @@ function PressCenter() {
                     </div>
                 </div>
             </section>
-                </>
-            )}
         </div>
     );
 }

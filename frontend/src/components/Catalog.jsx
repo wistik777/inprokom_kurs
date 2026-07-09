@@ -142,14 +142,6 @@ const Catalog = () => {
         setCurrentPage(Math.min(totalPages, Math.max(1, page)));
     };
 
-    if (loading) {
-        return (
-            <main className="page-container py-20">
-                <p className="text-[16px] text-[#666]">Загрузка каталога…</p>
-            </main>
-        );
-    }
-
     return (
         <main className="page-container w-full max-w-full pb-12 pt-4 min-[426px]:pb-16 min-[426px]:pt-6 lg:ml-60 lg:max-w-[calc(100%-15rem)] lg:pr-8">
             <div className="flex flex-col items-start gap-6 max-[768px]:items-center lg:flex-row lg:gap-4">

@@ -8,11 +8,7 @@ function ProtectedRoute({ children, requireAdmin = false, requireManager = false
     const location = useLocation();
 
     if (loading) {
-        return (
-            <div className="page-container flex min-h-[40vh] items-center justify-center py-20">
-                <p className="text-[16px] text-[#666]">Загрузка…</p>
-            </div>
-        );
+        return null;
     }
 
     if (!user) {

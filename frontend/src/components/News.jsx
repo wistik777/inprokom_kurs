@@ -6,7 +6,7 @@ import { useNewsItems } from "../hooks/useNews";
 import { NEWS_PAGE_SIZE } from "../data/newsItems";
 
 function News() {
-    const { newsItems, loading } = useNewsItems();
+    const { newsItems } = useNewsItems();
     const [visibleCount, setVisibleCount] = useState(NEWS_PAGE_SIZE);
     const [viewMode, setViewMode] = useState("grid");
     const [search, setSearch] = useState("");
@@ -19,14 +19,6 @@ function News() {
 
         return newsItems.filter((item) => item.title.toLowerCase().includes(query));
     }, [search, newsItems]);
-
-    if (loading) {
-        return (
-            <div className="page-container py-20 text-center text-[16px] text-[#666]">
-                Загрузка новостей…
-            </div>
-        );
-    }
 
     const visibleNews = filteredNews.slice(0, visibleCount);
     const featuredNews = visibleNews[0];

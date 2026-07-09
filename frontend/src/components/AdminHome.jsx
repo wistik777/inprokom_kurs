@@ -101,12 +101,8 @@ const AdminHome = () => {
         }
     };
 
-    if (loading) {
-        return (
-            <main className="mx-auto w-full max-w-[1220px] px-6 py-10">
-                <p className="text-[16px] text-[#666]">Загрузка…</p>
-            </main>
-        );
+    if (loading && !data) {
+        return null;
     }
 
     return (
