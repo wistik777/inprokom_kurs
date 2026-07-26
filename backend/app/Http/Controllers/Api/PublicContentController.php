@@ -53,4 +53,11 @@ class PublicContentController extends Controller
             'data' => SiteContent::activeVacancies(),
         ]);
     }
+
+    public function categories(): JsonResponse
+    {
+        return response()->json([
+            'data' => SiteContent::categoryTree(),
+        ]);
+    }
 }

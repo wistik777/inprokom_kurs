@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api, resolveAssetUrl } from '../api/client';
+import { formatPrice } from '../utils/formatPrice';
 
 const ProductPage = () => {
     const { productId } = useParams();
@@ -84,6 +85,9 @@ const ProductPage = () => {
                             {product.name}
                         </h1>
                         <p className="mt-3 text-[16px] text-[#666]">Модель: {product.model}</p>
+                        <p className="mt-4 text-[24px] font-semibold text-[#FA4234] min-[426px]:text-[28px]">
+                            {formatPrice(product.price)}
+                        </p>
                         {product.description && (
                             <div className="mt-8 text-[16px] leading-relaxed text-[#333]">
                                 {product.description}

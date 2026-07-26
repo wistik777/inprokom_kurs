@@ -10,8 +10,10 @@ use App\Models\Vacancy;
 use App\Models\VacancyApplication;
 use App\Support\SiteContent;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ManagerController extends Controller
@@ -19,38 +21,34 @@ class ManagerController extends Controller
     public function index()
     {
         $products = Product::query()
-            ->with(['categories:id,name'])
+            ->with(['categories:id,name,parent_id'])
             ->latest('id')
-            ->get(['id', 'name', 'model', 'is_active']);
-
-        $categories = Category::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get(['id', 'name']);
+            ->get(['id', 'name', 'model', 'description', 'price', 'image_url', 'is_active']);
 
         return response()->json([
             'data' => [
                 'products' => $products,
-                'categories' => $categories,
+                'categories' => SiteContent::categoryTree(),
             ],
         ]);
     }
 
     public function storeProduct(Request $request)
     {
-
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'model' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
             'image_file' => 'nullable|image|max:5120',
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'integer|exists:categories,id',
         ], [
             'name.required' => 'Введите наименование продукции',
             'model.required' => 'Введите модель продукции',
+            'price.required' => 'Укажите стоимость продукции',
+            'price.numeric' => 'Стоимость должна быть числом',
+            'price.min' => 'Стоимость не может быть отрицательной',
             'image_file.image' => 'Файл должен быть изображением',
             'image_file.max' => 'Размер изображения не должен превышать 5 МБ',
         ]);
@@ -65,7 +63,7 @@ class ManagerController extends Controller
             'name' => $validated['name'],
             'model' => $validated['model'],
             'description' => $validated['description'] ?? null,
-            'price' => 0,
+            'price' => $validated['price'],
             'image_url' => $imageUrl,
             'is_active' => true,
         ]);
@@ -74,8 +72,48 @@ class ManagerController extends Controller
 
         return response()->json([
             'message' => 'Продукция успешно добавлена',
-            'data' => $product->load('categories:id,name'),
+            'data' => $product->load('categories:id,name,parent_id'),
         ], 201);
+    }
+
+    public function updateProduct(Request $request, Product $product)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'model' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'image_file' => 'nullable|image|max:5120',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => 'integer|exists:categories,id',
+        ], [
+            'name.required' => 'Введите наименование продукции',
+            'model.required' => 'Введите модель продукции',
+            'price.required' => 'Укажите стоимость продукции',
+            'price.numeric' => 'Стоимость должна быть числом',
+            'price.min' => 'Стоимость не может быть отрицательной',
+            'image_file.image' => 'Файл должен быть изображением',
+            'image_file.max' => 'Размер изображения не должен превышать 5 МБ',
+        ]);
+
+        if ($request->hasFile('image_file')) {
+            $path = $request->file('image_file')->store('products', 'public');
+            $product->image_url = Storage::url($path);
+        }
+
+        $product->update([
+            'name' => $validated['name'],
+            'model' => $validated['model'],
+            'description' => $validated['description'] ?? null,
+            'price' => $validated['price'],
+        ]);
+
+        $product->categories()->sync($validated['category_ids'] ?? []);
+
+        return response()->json([
+            'message' => 'Продукция успешно обновлена',
+            'data' => $product->fresh()->load('categories:id,name,parent_id'),
+        ]);
     }
 
     public function destroyProduct(Product $product)
@@ -83,6 +121,67 @@ class ManagerController extends Controller
         $product->delete();
 
         return response()->json(['message' => 'Продукция успешно удалена']);
+    }
+
+    public function storeCategory(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'parent_id' => 'nullable|integer|exists:categories,id',
+        ], [
+            'name.required' => 'Введите название раздела',
+            'parent_id.exists' => 'Родительский раздел не найден',
+        ]);
+
+        $parentId = $validated['parent_id'] ?? null;
+
+        if ($parentId !== null) {
+            $parent = Category::query()->findOrFail($parentId);
+
+            if ($parent->parent_id !== null) {
+                throw ValidationException::withMessages([
+                    'parent_id' => ['Подраздел можно создать только внутри основного раздела'],
+                ]);
+            }
+        }
+
+        $sortOrder = Category::query()
+            ->where('parent_id', $parentId)
+            ->max('sort_order');
+
+        $category = Category::create([
+            'name' => $validated['name'],
+            'slug' => $this->uniqueCategorySlug($validated['name']),
+            'parent_id' => $parentId,
+            'is_active' => true,
+            'sort_order' => ($sortOrder ?? 0) + 1,
+        ]);
+
+        return response()->json([
+            'message' => $parentId ? 'Подраздел успешно добавлен' : 'Раздел успешно добавлен',
+            'data' => $category,
+        ], 201);
+    }
+
+    public function destroyCategory(Category $category): JsonResponse
+    {
+        if ($category->children()->exists()) {
+            return response()->json([
+                'message' => 'Сначала удалите подразделы внутри этого раздела',
+            ], 422);
+        }
+
+        if ($category->products()->exists()) {
+            return response()->json([
+                'message' => 'Нельзя удалить раздел, к которому привязаны товары',
+            ], 422);
+        }
+
+        $category->delete();
+
+        return response()->json([
+            'message' => $category->parent_id ? 'Подраздел удален' : 'Раздел удален',
+        ]);
     }
 
     public function inbox()
@@ -362,5 +461,24 @@ class ManagerController extends Controller
 
         $item->status = $validated['status'];
         $item->save();
+    }
+
+    private function uniqueCategorySlug(string $name): string
+    {
+        $base = Str::slug(Str::transliterate($name));
+
+        if ($base === '') {
+            $base = 'category';
+        }
+
+        $slug = $base;
+        $counter = 1;
+
+        while (Category::query()->where('slug', $slug)->exists()) {
+            $slug = $base.'-'.$counter;
+            $counter++;
+        }
+
+        return $slug;
     }
 }

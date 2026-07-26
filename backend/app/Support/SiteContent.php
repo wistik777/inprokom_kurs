@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Category;
 use App\Models\NewsPost;
 use App\Models\Vacancy;
 use Carbon\Carbon;
@@ -38,6 +39,36 @@ class SiteContent
             ->orderByDesc('id')
             ->get()
             ->map(fn (Vacancy $vacancy) => $vacancy->toPublicArray())
+            ->values()
+            ->all();
+    }
+
+    public static function categoryTree(): array
+    {
+        if (!self::tablesExist() || !\Illuminate\Support\Facades\Schema::hasTable('categories')) {
+            return [];
+        }
+
+        return Category::query()
+            ->whereNull('parent_id')
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->with(['children' => function ($query) {
+                $query->where('is_active', true)->orderBy('sort_order')->orderBy('name');
+            }])
+            ->get(['id', 'name', 'slug', 'parent_id', 'sort_order'])
+            ->map(fn (Category $category) => [
+                'id' => $category->id,
+                'name' => $category->name,
+                'slug' => $category->slug,
+                'children' => $category->children->map(fn (Category $child) => [
+                    'id' => $child->id,
+                    'name' => $child->name,
+                    'slug' => $child->slug,
+                    'parent_id' => $child->parent_id,
+                ])->values()->all(),
+            ])
             ->values()
             ->all();
     }

@@ -54,6 +54,7 @@ export const api = {
         newsShow: (id) => apiRequest(`/news/${id}`),
         products: () => apiRequest('/products'),
         productShow: (id) => apiRequest(`/products/${id}`),
+        categories: () => apiRequest('/categories'),
         vacancies: () => apiRequest('/vacancies'),
         contactMessage: (payload) => apiRequest('/contact-messages', { method: 'POST', body: payload }),
         vacancyApplication: (formData) =>
@@ -74,7 +75,12 @@ export const api = {
         products: () => apiRequest('/manager/products'),
         createProduct: (formData) =>
             apiRequest('/manager/products', { method: 'POST', formData }),
+        updateProduct: (id, formData) =>
+            apiRequest(`/manager/products/${id}`, { method: 'PATCH', formData }),
         deleteProduct: (id) => apiRequest(`/manager/products/${id}`, { method: 'DELETE' }),
+        createCategory: (payload) =>
+            apiRequest('/manager/categories', { method: 'POST', body: payload }),
+        deleteCategory: (id) => apiRequest(`/manager/categories/${id}`, { method: 'DELETE' }),
         inbox: () => apiRequest('/manager/inbox'),
         updateFeedbackStatus: (id, status) =>
             apiRequest(`/manager/feedback/${id}`, { method: 'PATCH', body: { status } }),

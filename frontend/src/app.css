@@ -384,6 +384,10 @@ body {
         justify-items: center;
     }
 
+    .catalog-filters {
+        scrollbar-width: thin;
+    }
+
     .press-news-grid {
         justify-items: center;
     }

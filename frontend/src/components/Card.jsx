@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { resolveAssetUrl } from '../api/client';
+import { formatPrice } from '../utils/formatPrice';
 
 const Card = ({ product }) => {
     const navigate = useNavigate();
@@ -21,7 +22,7 @@ const Card = ({ product }) => {
                     openProductPage();
                 }
             }}
-            className="group relative w-full max-w-[230px] cursor-pointer overflow-hidden border border-[#FA4234] bg-white p-3.5 min-h-[275px] max-[768px]:mx-auto"
+            className="group relative w-full max-w-[230px] cursor-pointer overflow-hidden border border-[#FA4234] bg-white p-3.5 min-h-[295px] max-[768px]:mx-auto"
         >
             <div className="absolute inset-0 w-0 bg-[#FA4234] transition-all duration-500 ease-out group-hover:w-full" />
 
@@ -40,6 +41,9 @@ const Card = ({ product }) => {
                     <p className="mt-1.5 text-[12px] text-[#555]">
                         {product.model}
                     </p>
+                    <p className="mt-2 text-[18px] font-semibold text-[#FA4234] min-[426px]:text-[20px]">
+                        {formatPrice(product.price)}
+                    </p>
                 </div>
 
                 <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center px-3 text-center opacity-0 transition-all duration-500 ease-out group-hover:opacity-100">
@@ -49,7 +53,10 @@ const Card = ({ product }) => {
                     <p className="mt-2 text-[14px] text-white/90">
                         {product.model}
                     </p>
-                    <p className="mt-3 max-h-[96px] overflow-hidden text-[13px] leading-5 text-white/95">
+                    <p className="mt-2 text-[18px] font-semibold text-white min-[426px]:text-[20px]">
+                        {formatPrice(product.price)}
+                    </p>
+                    <p className="mt-3 max-h-[72px] overflow-hidden text-[13px] leading-5 text-white/95">
                         {product.description}
                     </p>
                     <div className="mt-5">

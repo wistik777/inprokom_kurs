@@ -14,6 +14,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/news/{newsPost}', [PublicContentController::class, 'newsShow'])->whereNumber('newsPost');
     Route::get('/products', [PublicContentController::class, 'products']);
     Route::get('/products/{product}', [PublicContentController::class, 'productShow'])->whereNumber('product');
+    Route::get('/categories', [PublicContentController::class, 'categories']);
     Route::get('/vacancies', [PublicContentController::class, 'vacancies']);
 
     Route::post('/contact-messages', [ContactMessageController::class, 'store']);
@@ -37,7 +38,11 @@ Route::prefix('v1')->group(function () {
     Route::middleware('manager')->prefix('manager')->group(function () {
         Route::get('/products', [ManagerController::class, 'index']);
         Route::post('/products', [ManagerController::class, 'storeProduct']);
+        Route::patch('/products/{product}', [ManagerController::class, 'updateProduct']);
         Route::delete('/products/{product}', [ManagerController::class, 'destroyProduct']);
+
+        Route::post('/categories', [ManagerController::class, 'storeCategory']);
+        Route::delete('/categories/{category}', [ManagerController::class, 'destroyCategory']);
 
         Route::get('/inbox', [ManagerController::class, 'inbox']);
         Route::patch('/feedback/{message}', [ManagerController::class, 'updateFeedbackStatus']);

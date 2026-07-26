@@ -1,42 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client';
 import Card from './Card';
-
-const categories = [
-    {
-        name: 'Объектовая безопасность',
-        children: ['Видеонаблюдение', 'Контроль доступа'],
-    },
-    {
-        name: 'Опорно-поворотные устройства',
-        children: ['Уличные платформы', 'Стационарные модули'],
-    },
-    {
-        name: 'Военная техника',
-        children: ['Наблюдательные комплексы'],
-    },
-    {
-        name: 'Контрактное производство',
-        children: ['Электронные модули'],
-    },
-    {
-        name: 'Пожарная безопасность',
-        children: ['Пожарные извещатели'],
-    },
-    {
-        name: 'Ядерная безопасность',
-        children: ['Радиационный контроль'],
-    },
-    {
-        name: 'Экологическая безопасность',
-        children: ['Мониторинг окружающей среды'],
-    },
-];
+import CatalogProductsModal from './catalog/CatalogProductsModal';
+import CatalogFilters from './catalog/CatalogFilters';
+import { filterCatalogProducts } from '../utils/filterCatalogProducts';
 
 const ITEMS_PER_PAGE = 16;
 
 const Catalog = () => {
     const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchField, setSearchField] = useState('name');
     const [searchValue, setSearchValue] = useState('');
@@ -44,20 +17,22 @@ const Catalog = () => {
     const [expandedCategory, setExpandedCategory] = useState(-1);
     const [selectedGenre, setSelectedGenre] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
+    const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
 
-        api.public
-            .products()
-            .then((response) => {
+        Promise.all([api.public.products(), api.public.categories()])
+            .then(([productsResponse, categoriesResponse]) => {
                 if (!cancelled) {
-                    setProducts(Array.isArray(response.data) ? response.data : []);
+                    setProducts(Array.isArray(productsResponse.data) ? productsResponse.data : []);
+                    setCategories(Array.isArray(categoriesResponse.data) ? categoriesResponse.data : []);
                 }
             })
             .catch(() => {
                 if (!cancelled) {
                     setProducts([]);
+                    setCategories([]);
                 }
             })
             .finally(() => {
@@ -79,36 +54,10 @@ const Catalog = () => {
         setExpandedCategory(-1);
     };
 
-    const filteredProducts = useMemo(() => {
-        const normalizedQuery = searchValue.trim().toLowerCase();
-
-        let result = [...products];
-
-        if (selectedGenre) {
-            result = result.filter((product) => {
-                const names = Array.isArray(product.categories)
-                    ? product.categories.map((category) => String(category.name).toLowerCase())
-                    : [];
-
-                return names.includes(selectedGenre.toLowerCase());
-            });
-        }
-
-        if (normalizedQuery) {
-            result = result.filter((product) => {
-                const source = String(product[searchField] ?? '').toLowerCase();
-                return source.includes(normalizedQuery);
-            });
-        }
-
-        if (sortMode === 'name_asc') {
-            result.sort((a, b) => String(a.name).localeCompare(String(b.name), 'ru'));
-        } else if (sortMode === 'name_desc') {
-            result.sort((a, b) => String(b.name).localeCompare(String(a.name), 'ru'));
-        }
-
-        return result;
-    }, [products, searchField, searchValue, sortMode, selectedGenre]);
+    const filteredProducts = useMemo(
+        () => filterCatalogProducts(products, { searchField, searchValue, sortMode, selectedGenre }),
+        [products, searchField, searchValue, sortMode, selectedGenre]
+    );
 
     const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
 
@@ -163,14 +112,14 @@ const Catalog = () => {
                                 </button>
 
                                 <ul className={`overflow-hidden pl-2 transition-all duration-300 ${expandedCategory === index ? 'max-h-36 pb-2' : 'max-h-0'}`}>
-                                    {category.children.map((child) => (
-                                        <li key={child}>
+                                    {(category.children || []).map((child) => (
+                                        <li key={child.id || child.name}>
                                             <button
                                                 type="button"
-                                                onClick={() => setSelectedGenre((prev) => prev === child ? '' : child)}
-                                                className={`w-full cursor-pointer py-1 text-left text-[14px] transition-colors duration-200 hover:text-[#FA4234] ${selectedGenre === child ? 'text-[#FA4234]' : 'text-[#555]'}`}
+                                                onClick={() => setSelectedGenre((prev) => prev === child.name ? '' : child.name)}
+                                                className={`w-full cursor-pointer py-1 text-left text-[14px] transition-colors duration-200 hover:text-[#FA4234] ${selectedGenre === child.name ? 'text-[#FA4234]' : 'text-[#555]'}`}
                                             >
-                                                {child}
+                                                {child.name}
                                             </button>
                                         </li>
                                     ))}
@@ -178,6 +127,14 @@ const Catalog = () => {
                             </li>
                         ))}
                     </ul>
+
+                    <button
+                        type="button"
+                        onClick={() => setIsCatalogModalOpen(true)}
+                        className="btn-fill mt-6 flex h-[48px] w-full items-center justify-center bg-white text-[13px] font-semibold uppercase tracking-widest"
+                    >
+                        <span className="relative z-10">Прайс лист</span>
+                    </button>
                 </aside>
 
                 <div className="w-full flex-1 lg:ml-[6%]">
@@ -186,39 +143,24 @@ const Catalog = () => {
                     </h2>
 
                     <div className="mb-6 bg-white px-0 py-4">
-
-                        <div className="flex w-full flex-col items-center gap-3 max-[768px]:max-w-[360px] min-[426px]:flex-row min-[426px]:flex-wrap min-[426px]:items-center min-[426px]:gap-4 min-[426px]:max-w-none">
-                            <select
-                                value={searchField}
-                                onChange={(e) => setSearchField(e.target.value)}
-                                className="h-[42px] w-full border border-[#f4a8a2] bg-white px-3 text-[15px] min-[426px]:w-[220px] lg:w-[300px]"
-                            >
-                                <option value="name">По наименованию...</option>
-                                <option value="model">По модели...</option>
-                            </select>
-                            <input
-                                value={searchValue}
-                                onChange={(e) => setSearchValue(e.target.value)}
-                                placeholder="Введите значение..."
-                                className="h-[42px] w-full border border-[#f4a8a2] bg-white px-3 text-[15px] min-[426px]:w-[220px] lg:w-[260px]"
-                            />
-                            <select
-                                value={sortMode}
-                                onChange={(e) => setSortMode(e.target.value)}
-                                className="h-[42px] w-full border border-[#f4a8a2] bg-white px-3 text-[15px] min-[426px]:w-[220px] lg:w-[260px]"
-                            >
-                                <option value="default">По умолчанию</option>
-                                <option value="name_asc">Название (А-Я)</option>
-                                <option value="name_desc">Название (Я-А)</option>
-                            </select>
-                            <button
-                                type="button"
-                                onClick={handleResetFilters}
-                                className="btn-fill h-[42px] w-full bg-white text-[13px] font-semibold min-[426px]:w-[150px]"
-                            >
-                                <span className="relative z-10">СБРОСИТЬ</span>
-                            </button>
-                        </div>
+                        <CatalogFilters
+                            searchField={searchField}
+                            searchValue={searchValue}
+                            sortMode={sortMode}
+                            onSearchFieldChange={setSearchField}
+                            onSearchValueChange={setSearchValue}
+                            onSortModeChange={setSortMode}
+                            onReset={handleResetFilters}
+                            trailing={
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCatalogModalOpen(true)}
+                                    className="btn-fill h-[42px] w-[130px] shrink-0 bg-white text-[13px] font-semibold uppercase tracking-widest lg:hidden"
+                                >
+                                    <span className="relative z-10">Прайс лист</span>
+                                </button>
+                            }
+                        />
                     </div>
 
                     <section className="catalog-product-grid grid flex-1 grid-cols-1 justify-items-stretch gap-x-4 gap-y-4 min-[426px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
@@ -278,6 +220,13 @@ const Catalog = () => {
                     </div>
                 </div>
             </div>
+
+            {isCatalogModalOpen && (
+                <CatalogProductsModal
+                    products={products}
+                    onClose={() => setIsCatalogModalOpen(false)}
+                />
+            )}
         </main>
     );
 };

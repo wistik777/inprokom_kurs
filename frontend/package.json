@@ -8,9 +8,11 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "pdfmake": "^0.3.11",
         "react": "^19.2.4",
         "react-dom": "^19.2.4",
-        "react-router-dom": "^7.9.1"
+        "react-router-dom": "^7.9.1",
+        "xlsx": "^0.18.5"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

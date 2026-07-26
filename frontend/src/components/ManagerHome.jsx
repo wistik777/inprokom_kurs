@@ -2,6 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api/client';
 import { useApiQuery } from '../hooks/useApiQuery';
+import { formatPrice } from '../utils/formatPrice';
+import ConfirmDeleteModal from './manager/ConfirmDeleteModal';
+import ManagerCategories from './manager/ManagerCategories';
+import ProductFormModal from './manager/ProductFormModal';
 
 const ITEMS_PER_PAGE = 12;
 
@@ -11,15 +15,14 @@ const ManagerHome = () => {
     const categories = Array.isArray(data?.categories) ? data.categories : [];
     const [success, setSuccess] = useState('');
     const [errors, setErrors] = useState({});
-    const [old, setOld] = useState({});
 
     const [searchField, setSearchField] = useState('name');
     const [searchValue, setSearchValue] = useState('');
     const [sortMode, setSortMode] = useState('default');
     const [currentPage, setCurrentPage] = useState(1);
-    const [isModalOpen, setIsModalOpen] = useState(Object.keys(errors).length > 0);
+    const [productModal, setProductModal] = useState(null);
     const [productToDelete, setProductToDelete] = useState(null);
-    const [selectedFileName, setSelectedFileName] = useState('');
+    const [deletingProduct, setDeletingProduct] = useState(false);
 
     const handleResetFilters = () => {
         setSearchField('name');
@@ -42,6 +45,10 @@ const ManagerHome = () => {
             result.sort((a, b) => String(a.name).localeCompare(String(b.name), 'ru'));
         } else if (sortMode === 'name_desc') {
             result.sort((a, b) => String(b.name).localeCompare(String(a.name), 'ru'));
+        } else if (sortMode === 'price_asc') {
+            result.sort((a, b) => Number(a.price) - Number(b.price));
+        } else if (sortMode === 'price_desc') {
+            result.sort((a, b) => Number(b.price) - Number(a.price));
         }
 
         return result;
@@ -79,7 +86,7 @@ const ManagerHome = () => {
         setCurrentPage(Math.min(totalPages, Math.max(1, page)));
     };
 
-    const handleCreateProduct = async (event) => {
+    const handleProductSubmit = async (event) => {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
 
@@ -87,11 +94,13 @@ const ManagerHome = () => {
         setSuccess('');
 
         try {
-            const response = await api.manager.createProduct(formData);
-            setSuccess(response.message || 'Продукция успешно добавлена');
-            setIsModalOpen(false);
-            setSelectedFileName('');
-            event.currentTarget.reset();
+            const response =
+                productModal?.mode === 'edit'
+                    ? await api.manager.updateProduct(productModal.product.id, formData)
+                    : await api.manager.createProduct(formData);
+
+            setSuccess(response.message || 'Продукция успешно сохранена');
+            setProductModal(null);
             await reload();
         } catch (error) {
             if (error instanceof ApiError && error.errors) {
@@ -99,12 +108,14 @@ const ManagerHome = () => {
                 return;
             }
 
-            setErrors({ name: [error.message || 'Не удалось добавить продукцию'] });
+            setErrors({ name: [error.message || 'Не удалось сохранить продукцию'] });
         }
     };
 
     const handleDeleteProduct = async () => {
         if (!productToDelete) return;
+
+        setDeletingProduct(true);
 
         try {
             const response = await api.manager.deleteProduct(productToDelete.id);
@@ -113,7 +124,15 @@ const ManagerHome = () => {
             await reload();
         } catch (error) {
             setErrors({ name: [error.message || 'Не удалось удалить продукцию'] });
+            setProductToDelete(null);
+        } finally {
+            setDeletingProduct(false);
         }
+    };
+
+    const handleCategoriesChanged = async (message) => {
+        setSuccess(message || 'Разделы обновлены');
+        await reload();
     };
 
     if (loading && !data) {
@@ -142,7 +161,10 @@ const ManagerHome = () => {
                     </Link>
                     <button
                         type="button"
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={() => {
+                            setErrors({});
+                            setProductModal({ mode: 'create' });
+                        }}
                         className="btn-fill inline-flex h-[44px] min-w-[190px] items-center justify-center bg-white px-5 py-2 text-[14px] font-semibold"
                     >
                         <span className="relative z-10">Добавить продукцию</span>
@@ -156,204 +178,142 @@ const ManagerHome = () => {
                 </div>
             )}
 
-            <div className="mt-8 flex items-center gap-4">
-                <select
-                    value={searchField}
-                    onChange={(event) => setSearchField(event.target.value)}
-                    className="h-[42px] w-[260px] border border-[#f4a8a2] bg-white px-3 text-[15px]"
-                >
-                    <option value="name">По наименованию...</option>
-                    <option value="model">По модели...</option>
-                </select>
-                <input
-                    value={searchValue}
-                    onChange={(event) => setSearchValue(event.target.value)}
-                    placeholder="Введите значение..."
-                    className="h-[42px] w-[260px] border border-[#f4a8a2] bg-white px-3 text-[15px]"
+            <div className="mt-8 flex flex-col gap-6 lg:flex-row lg:items-start">
+                <ManagerCategories
+                    categories={categories}
+                    onChanged={handleCategoriesChanged}
+                    onError={(message) => setErrors({ name: [message] })}
                 />
-                <select
-                    value={sortMode}
-                    onChange={(event) => setSortMode(event.target.value)}
-                    className="h-[42px] w-[260px] border border-[#f4a8a2] bg-white px-3 text-[15px]"
-                >
-                    <option value="default">По умолчанию</option>
-                    <option value="name_asc">Название (А-Я)</option>
-                    <option value="name_desc">Название (Я-А)</option>
-                </select>
-                <button
-                    type="button"
-                    onClick={handleResetFilters}
-                    className="btn-fill h-[42px] w-[150px] bg-white text-[13px] font-semibold"
-                >
-                    <span className="relative z-10">СБРОСИТЬ</span>
-                </button>
-            </div>
 
-            <section className="mt-6 overflow-hidden rounded-2xl border border-[#ececec] bg-white shadow-[0_10px_26px_rgba(0,0,0,0.05)]">
-                <div className="hidden grid-cols-[80px_1.4fr_1fr_1fr] bg-[#f8f8f8] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#777] md:grid">
-                    <p>ID</p>
-                    <p>Название</p>
-                    <p>Модель</p>
-                    <p>Действие</p>
-                </div>
+                <div className="min-w-0 flex-1">
+                    <div className="catalog-filters flex w-full items-center gap-2 overflow-x-auto pb-1">
+                        <select
+                            value={searchField}
+                            onChange={(event) => setSearchField(event.target.value)}
+                            className="catalog-filters__control h-[42px] w-[170px] shrink-0 border border-[#f4a8a2] bg-white px-3 text-[14px]"
+                        >
+                            <option value="name">По наименованию...</option>
+                            <option value="model">По модели...</option>
+                        </select>
+                        <input
+                            value={searchValue}
+                            onChange={(event) => setSearchValue(event.target.value)}
+                            placeholder="Введите значение..."
+                            className="catalog-filters__control h-[42px] w-[170px] shrink-0 border border-[#f4a8a2] bg-white px-3 text-[14px]"
+                        />
+                        <select
+                            value={sortMode}
+                            onChange={(event) => setSortMode(event.target.value)}
+                            className="catalog-filters__control h-[42px] w-[170px] shrink-0 border border-[#f4a8a2] bg-white px-3 text-[14px]"
+                        >
+                            <option value="default">По умолчанию</option>
+                            <option value="name_asc">Название (А-Я)</option>
+                            <option value="name_desc">Название (Я-А)</option>
+                            <option value="price_asc">Цена (по возрастанию)</option>
+                            <option value="price_desc">Цена (по убыванию)</option>
+                        </select>
+                        <button
+                            type="button"
+                            onClick={handleResetFilters}
+                            className="btn-fill h-[42px] w-[130px] shrink-0 bg-white text-[13px] font-semibold"
+                        >
+                            <span className="relative z-10">СБРОСИТЬ</span>
+                        </button>
+                    </div>
 
-                {paginatedProducts.length > 0 ? (
-                    paginatedProducts.map((product) => (
-                        <div key={product.id} className="border-t border-[#efefef] px-5 py-4 md:grid md:grid-cols-[80px_1.4fr_1fr_1fr] md:items-center">
-                            <p className="text-[15px] text-[#1f1f1f]">{product.id}</p>
-                            <p className="mt-2 text-[15px] font-semibold text-[#1f1f1f] md:mt-0">{product.name}</p>
-                            <p className="mt-2 text-[15px] text-[#3a3a3a] md:mt-0">{product.model}</p>
-                            <p className="mt-2 md:mt-0">
-                                <button
-                                    type="button"
-                                    onClick={() => setProductToDelete({ id: product.id, name: product.name })}
-                                    className="btn-fill inline-flex h-[34px] w-[140px] items-center justify-center bg-white text-[13px] font-semibold"
+                    <section className="mt-6 overflow-hidden rounded-2xl border border-[#ececec] bg-white shadow-[0_10px_26px_rgba(0,0,0,0.05)]">
+                        <div className="hidden grid-cols-[70px_1.2fr_0.8fr_0.8fr_1fr] bg-[#f8f8f8] px-5 py-3 text-[12px] font-semibold uppercase tracking-wide text-[#777] lg:grid">
+                            <p>ID</p>
+                            <p>Название</p>
+                            <p>Модель</p>
+                            <p>Цена</p>
+                            <p>Действия</p>
+                        </div>
+
+                        {paginatedProducts.length > 0 ? (
+                            paginatedProducts.map((product) => (
+                                <div
+                                    key={product.id}
+                                    className="border-t border-[#efefef] px-5 py-4 lg:grid lg:grid-cols-[70px_1.2fr_0.8fr_0.8fr_1fr] lg:items-center"
                                 >
-                                    <span className="relative z-10">Удалить</span>
-                                </button>
-                            </p>
-                        </div>
-                    ))
-                ) : (
-                    <div className="border-t border-[#efefef] px-5 py-8 text-center text-[15px] text-[#777]">
-                        По выбранным параметрам продукция не найдена
-                    </div>
-                )}
-            </section>
+                                    <p className="text-[15px] text-[#1f1f1f]">{product.id}</p>
+                                    <p className="mt-2 text-[15px] font-semibold text-[#1f1f1f] lg:mt-0">{product.name}</p>
+                                    <p className="mt-2 text-[15px] text-[#3a3a3a] lg:mt-0">{product.model}</p>
+                                    <p className="mt-2 text-[15px] font-semibold text-[#FA4234] lg:mt-0">
+                                        {formatPrice(product.price)}
+                                    </p>
+                                    <div className="mt-2 flex flex-wrap gap-2 lg:mt-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setErrors({});
+                                                setProductModal({ mode: 'edit', product });
+                                            }}
+                                            className="btn-fill inline-flex h-[34px] min-w-[120px] items-center justify-center bg-white px-3 text-[13px] font-semibold"
+                                        >
+                                            <span className="relative z-10">Изменить</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setProductToDelete({ id: product.id, name: product.name })}
+                                            className="btn-fill inline-flex h-[34px] min-w-[120px] items-center justify-center bg-white px-3 text-[13px] font-semibold"
+                                        >
+                                            <span className="relative z-10">Удалить</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="border-t border-[#efefef] px-5 py-8 text-center text-[15px] text-[#777]">
+                                По выбранным параметрам продукция не найдена
+                            </div>
+                        )}
+                    </section>
 
-            <div className="mt-7 flex flex-col items-center">
-                <div className="flex items-center gap-4 text-[22px]">
-                    <button type="button" onClick={() => goToPage(1)} className="cursor-pointer transition-colors hover:text-[#FA4234]">В начало</button>
-                    <button type="button" onClick={() => goToPage(currentPage - 1)} className="cursor-pointer text-[26px] transition-colors hover:text-[#FA4234]" aria-label="Предыдущая страница">&#8249;</button>
-                    <div className="flex items-center gap-2.5">
-                        {visiblePages.map((page) => (
-                            <button
-                                key={page}
-                                type="button"
-                                onClick={() => goToPage(page)}
-                                className={`cursor-pointer transition-colors ${currentPage === page ? 'text-[#FA4234]' : 'text-black hover:text-[#FA4234]'}`}
-                            >
-                                {page}
-                            </button>
-                        ))}
+                    <div className="mt-7 flex flex-col items-center">
+                        <div className="flex items-center gap-4 text-[22px]">
+                            <button type="button" onClick={() => goToPage(1)} className="cursor-pointer transition-colors hover:text-[#FA4234]">В начало</button>
+                            <button type="button" onClick={() => goToPage(currentPage - 1)} className="cursor-pointer text-[26px] transition-colors hover:text-[#FA4234]" aria-label="Предыдущая страница">&#8249;</button>
+                            <div className="flex items-center gap-2.5">
+                                {visiblePages.map((page) => (
+                                    <button
+                                        key={page}
+                                        type="button"
+                                        onClick={() => goToPage(page)}
+                                        className={`cursor-pointer transition-colors ${currentPage === page ? 'text-[#FA4234]' : 'text-black hover:text-[#FA4234]'}`}
+                                    >
+                                        {page}
+                                    </button>
+                                ))}
+                            </div>
+                            <button type="button" onClick={() => goToPage(currentPage + 1)} className="cursor-pointer text-[26px] transition-colors hover:text-[#FA4234]" aria-label="Следующая страница">&#8250;</button>
+                            <button type="button" onClick={() => goToPage(totalPages)} className="cursor-pointer transition-colors hover:text-[#FA4234]">В конец</button>
+                        </div>
+                        <div className="mt-1.5 h-[2px] w-full max-w-[700px] bg-[#FA4234]" />
                     </div>
-                    <button type="button" onClick={() => goToPage(currentPage + 1)} className="cursor-pointer text-[26px] transition-colors hover:text-[#FA4234]" aria-label="Следующая страница">&#8250;</button>
-                    <button type="button" onClick={() => goToPage(totalPages)} className="cursor-pointer transition-colors hover:text-[#FA4234]">В конец</button>
                 </div>
-                <div className="mt-1.5 h-[2px] w-full max-w-[700px] bg-[#FA4234]" />
             </div>
 
-            {isModalOpen && (
-                <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 px-4" onClick={() => setIsModalOpen(false)}>
-                    <div className="w-full max-w-[980px] rounded-2xl bg-white p-6 shadow-[0_18px_40px_rgba(0,0,0,0.25)]" onClick={(event) => event.stopPropagation()}>
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                            <h2 className="text-[30px] font-semibold text-[#1b1b1b]">Добавление продукции</h2>
-                            <button
-                                type="button"
-                                onClick={() => setIsModalOpen(false)}
-                                className="h-9 w-9 rounded-md border border-[#ececec] text-[20px] leading-none text-[#666] transition-colors hover:border-[#FA4234] hover:text-[#FA4234]"
-                                aria-label="Закрыть модальное окно"
-                            >
-                                x
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleCreateProduct} encType="multipart/form-data" className="mt-5 rounded-2xl border border-[#ececec] bg-white p-6 shadow-[0_10px_26px_rgba(0,0,0,0.05)]">
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div>
-                                    <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-[#777]">Название</label>
-                                    <input type="text" name="name" defaultValue={old.name || ''} className="h-[44px] w-full rounded-md border border-[#FA4234] bg-white px-3 text-[15px] outline-none" required />
-                                    {errors.name && <p className="mt-1 text-[13px] text-red-500">{errors.name[0]}</p>}
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-[#777]">Модель</label>
-                                    <input type="text" name="model" defaultValue={old.model || ''} className="h-[44px] w-full rounded-md border border-[#FA4234] bg-white px-3 text-[15px] outline-none" required />
-                                    {errors.model && <p className="mt-1 text-[13px] text-red-500">{errors.model[0]}</p>}
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-[#777]">Изображение</label>
-                                    <div className="rounded-xl border border-[#FA4234] bg-white p-3">
-                                        <div className="flex flex-wrap items-center gap-3">
-                                            <label className="btn-fill inline-flex h-[40px] min-w-[170px] cursor-pointer items-center justify-center bg-white px-4 text-[13px] font-semibold">
-                                                <span className="relative z-10">Выбрать файл</span>
-                                                <input
-                                                    type="file"
-                                                    name="image_file"
-                                                    accept="image/*"
-                                                    className="hidden"
-                                                    onChange={(event) => setSelectedFileName(event.target.files?.[0]?.name || '')}
-                                                />
-                                            </label>
-                                            <p className={`text-[14px] ${selectedFileName ? 'text-[#333]' : 'text-[#888]'}`}>
-                                                {selectedFileName || 'Файл не выбран'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    {errors.image_file && <p className="mt-1 text-[13px] text-red-500">{errors.image_file[0]}</p>}
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="mb-1 block text-[12px] font-semibold uppercase tracking-wide text-[#777]">Описание</label>
-                                    <textarea name="description" rows={3} defaultValue={old.description || ''} className="w-full rounded-md border border-[#FA4234] bg-white px-3 py-2 text-[15px] outline-none" />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-[#777]">Категории</p>
-                                    <div className="grid max-h-[160px] gap-2 overflow-y-auto rounded-md border border-[#ececec] p-3 md:grid-cols-2">
-                                        {categories.map((category) => (
-                                            <label key={category.id} className="flex items-center gap-2 text-[14px] text-[#333]">
-                                                <input
-                                                    type="checkbox"
-                                                    name="category_ids[]"
-                                                    value={category.id}
-                                                    defaultChecked={Array.isArray(old.category_ids) && old.category_ids.map(String).includes(String(category.id))}
-                                                />
-                                                <span>{category.name}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button type="submit" className="btn-fill mt-6 h-[44px] min-w-[210px] bg-white px-6 py-2.5 text-[14px] font-semibold">
-                                <span className="relative z-10">Создать карточку</span>
-                            </button>
-                        </form>
-                    </div>
-                </div>
+            {productModal && (
+                <ProductFormModal
+                    mode={productModal.mode}
+                    product={productModal.product}
+                    categories={categories}
+                    errors={errors}
+                    onClose={() => setProductModal(null)}
+                    onSubmit={handleProductSubmit}
+                />
             )}
 
             {productToDelete && (
-                <div
-                    className="fixed inset-0 z-[85] flex items-center justify-center bg-black/45 px-4"
-                    onClick={() => setProductToDelete(null)}
-                >
-                    <div
-                        className="w-full max-w-[560px] rounded-2xl bg-white p-6 shadow-[0_18px_40px_rgba(0,0,0,0.25)]"
-                        onClick={(event) => event.stopPropagation()}
-                    >
-                        <h3 className="text-[26px] font-semibold text-[#1b1b1b]">Подтверждение удаления</h3>
-                        <p className="mt-3 text-[16px] text-[#444]">
-                            Точно ли вы хотите удалить продукцию <span className="font-semibold">"{productToDelete.name}"</span>?
-                        </p>
-
-                        <div className="mt-6 flex items-center justify-end gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setProductToDelete(null)}
-                                className="btn-fill h-[44px] min-w-[140px] bg-white px-5 py-2 text-[14px] font-semibold"
-                            >
-                                <span className="relative z-10">Отмена</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={handleDeleteProduct}
-                                className="h-[44px] min-w-[140px] border-2 border-[#FA4234] bg-[#FA4234] px-5 py-2 text-[14px] font-semibold text-white transition-colors duration-300 hover:bg-white hover:text-[#FA4234]"
-                            >
-                                Удалить
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <ConfirmDeleteModal
+                    title="Подтверждение удаления"
+                    name={productToDelete.name}
+                    description="Карточка товара будет удалена без возможности восстановления."
+                    onClose={() => setProductToDelete(null)}
+                    onConfirm={handleDeleteProduct}
+                    submitting={deletingProduct}
+                />
             )}
         </main>
     );
