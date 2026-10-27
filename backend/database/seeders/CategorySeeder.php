@@ -4,12 +4,10 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class CategorySeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
         $rootCategories = [
@@ -18,60 +16,101 @@ class CategorySeeder extends Seeder
                 'slug' => 'obektovaya-bezopasnost',
                 'sort_order' => 10,
                 'children' => [
-                    ['name' => 'Видеонаблюдение', 'slug' => 'videonablyudenie', 'sort_order' => 1],
-                    ['name' => 'Контроль доступа', 'slug' => 'kontrol-dostupa', 'sort_order' => 2],
-                ],
-            ],
-            [
-                'name' => 'Опорно-поворотные устройства',
-                'slug' => 'oporno-povorotnye-ustroystva',
-                'sort_order' => 20,
-                'children' => [
-                    ['name' => 'Уличные платформы', 'slug' => 'ulichnye-platformy', 'sort_order' => 1],
-                    ['name' => 'Стационарные модули', 'slug' => 'statsionarnye-moduli', 'sort_order' => 2],
-                ],
-            ],
-            [
-                'name' => 'Военная техника',
-                'slug' => 'voennaya-tekhnika',
-                'sort_order' => 30,
-                'children' => [
-                    ['name' => 'Наблюдательные комплексы', 'slug' => 'nablyudatelnye-kompleksy', 'sort_order' => 1],
-                ],
-            ],
-            [
-                'name' => 'Контрактное производство',
-                'slug' => 'kontraktnoe-proizvodstvo',
-                'sort_order' => 40,
-                'children' => [
-                    ['name' => 'Электронные модули', 'slug' => 'elektronnye-moduli', 'sort_order' => 1],
+                    'Охранные комплексы',
+                    'Системы контроля и управления доступом (СКУД)',
+                    'Устройства запорные электромеханические',
+                    'Извещатели охранные, оптические',
+                    'Извещатели охранные, радиолучевые',
+                    'Извещатели охранные, трибоэлектрические, пьезоэлектрические',
+                    'Датчики натяжения «Нить»',
+                    'Сигнально-переговорное устройство',
+                    'Мобильный пункт досмотра',
+                    'Источники питания',
                 ],
             ],
             [
                 'name' => 'Пожарная безопасность',
                 'slug' => 'pozharnaya-bezopasnost',
+                'sort_order' => 20,
+                'children' => [
+                    'Установка пожаротушения роботизированная «УПР-16»',
+                    'Стволы пожарные лафетные роботизированные (Роботы) модели ЛСД-С(Р)',
+                    'Вышки пожарные',
+                    'Страж — установка пожаротушения',
+                    'Ручной ствол',
+                    'Подъёмник лафетного ствола',
+                    '«СГТ 60-120» Система газодинамической технологии',
+                ],
+            ],
+            [
+                'name' => 'Опорно-поворотные устройства и приводная техника',
+                'slug' => 'opu-i-privodnaya-tehnika',
+                'sort_order' => 30,
+                'children' => [
+                    'Актуаторы и асинхронные двигатели частотного регулирования (АДЧР)',
+                    'Специализированные принадлежности',
+                    'ОПУ для мобильных антенных систем',
+                    'ОПУ для осесимметричных антенн',
+                    'ОПУ для офсетных антенн',
+                    'ОПУ для систем видеонаблюдения',
+                    'ОПУ неполноповоротные',
+                    'ОПУ стационарные',
+                    'ОПУ специального назначения',
+                    'Многофункциональное опорно-поворотное устройство',
+                    'Опорно-поворотное устройство для радара',
+                    '3-х координатное ОПУ',
+                    'Опорно-поворотное устройство АФАР',
+                    'ОПУ взрывозащищенное',
+                    'Акустический медицинский диагностический прибор «АИП»',
+                    'Двухэлектродный акустический медицинский диагностический прибор «АИП»',
+                ],
+            ],
+            [
+                'name' => 'Продукция специального назначения',
+                'slug' => 'produktsiya-spetsialnogo-naznacheniya',
+                'sort_order' => 40,
+                'children' => [
+                    'Система несущих конструкций серии 19″ (482,6 мм)',
+                    'Оборудование гидромеханизации',
+                    'Генератор горячего воздуха ГГВ-2А «Вулкан-Б»',
+                    'Глушитель шума авиационных маршевых двигателей',
+                    'Многооборотная тара',
+                ],
+            ],
+            [
+                'name' => 'НИОКР',
+                'slug' => 'niokr',
                 'sort_order' => 50,
                 'children' => [
-                    ['name' => 'Пожарные извещатели', 'slug' => 'pozharnye-izveshchateli', 'sort_order' => 1],
+                    'Научно-исследовательские и опытно-конструкторские работы',
+                    'Проектирование узлов и автоматизированных комплексов',
+                    'Разработки гражданского и военного назначения',
                 ],
             ],
             [
-                'name' => 'Ядерная безопасность',
-                'slug' => 'yadernaya-bezopasnost',
+                'name' => 'Контрактное производство',
+                'slug' => 'kontraktnoe-proizvodstvo',
                 'sort_order' => 60,
                 'children' => [
-                    ['name' => 'Радиационный контроль', 'slug' => 'radiatsionnyy-kontrol', 'sort_order' => 1],
-                ],
-            ],
-            [
-                'name' => 'Экологическая безопасность',
-                'slug' => 'ekologicheskaya-bezopasnost',
-                'sort_order' => 70,
-                'children' => [
-                    ['name' => 'Мониторинг окружающей среды', 'slug' => 'monitoring-okruzhayushchey-sredy', 'sort_order' => 1],
+                    'Покраска изделий (камера 8600×5100×4005 мм, ГОСТ Р)',
+                    'Порошковые покрытия электростатическим способом (камера 2000×1700×1500 мм)',
+                    'Маркирование трафаретной печатью (шелкография)',
+                    'Изготовление односторонних печатных плат до 250×400 мм',
+                    'Ручной SMD-монтаж и монтаж СВЧ-устройств',
+                    'Монтаж выводной / жгутовой / внутриблочный / межблочный',
+                    'Сборка электронных узлов с тестированием и ПО',
+                    'Токарная обработка (Ø до 800 мм, длина до 3000 мм)',
+                    'Нарезание зубьев шестерен (модуль до m=10, Ø до 800 мм)',
+                    'Сверление и растачивание отверстий (Ø до 600 мм)',
+                    'Изготовление металлоконструкций (сварка аргон / полуавтомат)',
+                    'Лазерная резка металла 0,5–10 мм (лист 1500×3000 мм)',
+                    'Гидроабразивная резка до 100 мм (лист 1500×3000 мм)',
+                    'Плазменная резка металла до 18 мм (лист 1500×3000 мм)',
                 ],
             ],
         ];
+
+        $keptSlugs = [];
 
         foreach ($rootCategories as $rootData) {
             $children = $rootData['children'];
@@ -81,13 +120,29 @@ class CategorySeeder extends Seeder
                 ['slug' => $rootData['slug']],
                 array_merge($rootData, ['parent_id' => null, 'is_active' => true])
             );
+            $keptSlugs[] = $root->slug;
 
-            foreach ($children as $childData) {
-                Category::updateOrCreate(
-                    ['slug' => $childData['slug']],
-                    array_merge($childData, ['parent_id' => $root->id, 'is_active' => true])
+            foreach ($children as $index => $childName) {
+                $childSlug = Str::slug($childName, '-', 'ru');
+                if ($childSlug === '') {
+                    $childSlug = $rootData['slug'].'-'.($index + 1);
+                }
+
+                $child = Category::updateOrCreate(
+                    ['slug' => $childSlug],
+                    [
+                        'name' => $childName,
+                        'parent_id' => $root->id,
+                        'is_active' => true,
+                        'sort_order' => ($index + 1) * 10,
+                    ]
                 );
+                $keptSlugs[] = $child->slug;
             }
         }
+
+        Category::query()
+            ->whereNotIn('slug', $keptSlugs)
+            ->update(['is_active' => false]);
     }
 }

@@ -1,31 +1,42 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { getStaffLoginPath } from './api/client';
 import ProtectedRoute from './components/ProtectedRoute';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './components/Home';
-import Contacts from './components/Contacts';
-import AboutCompany from './components/AboutCompany';
-import PressCenter from './components/PressCenter';
-import News from './components/News';
-import NewsArticle from './components/NewsArticle';
-import Vacancies from './components/Vacancies';
-import StaffLogin from './components/StaffLogin';
-import Catalog from './components/Catalog';
-import ProductPage from './components/ProductPage';
-import AdminHome from './components/AdminHome';
-import AdminSiteStats from './components/AdminSiteStats';
-import ManagerHome from './components/ManagerHome';
-import ManagerInbox from './components/ManagerInbox';
-import ManagerContent from './components/ManagerContent';
 import { markSkipSitePreloader } from './utils/skipPreloader';
+
+const Contacts = lazy(() => import('./components/Contacts'));
+const AboutCompany = lazy(() => import('./components/AboutCompany'));
+const PressCenter = lazy(() => import('./components/PressCenter'));
+const News = lazy(() => import('./components/News'));
+const NewsArticle = lazy(() => import('./components/NewsArticle'));
+const Vacancies = lazy(() => import('./components/Vacancies'));
+const StaffLogin = lazy(() => import('./components/StaffLogin'));
+const Catalog = lazy(() => import('./components/Catalog'));
+const ProductPage = lazy(() => import('./components/ProductPage'));
+const AdminHome = lazy(() => import('./components/AdminHome'));
+const AdminSiteStats = lazy(() => import('./components/AdminSiteStats'));
+const ManagerHome = lazy(() => import('./components/ManagerHome'));
+const ManagerInbox = lazy(() => import('./components/ManagerInbox'));
+const ManagerContent = lazy(() => import('./components/ManagerContent'));
+
+function RouteFallback() {
+    return (
+        <div className="flex min-h-[40vh] items-center justify-center text-[14px] text-[#888]" aria-hidden="true">
+            Загрузка…
+        </div>
+    );
+}
 
 function AppLayout({ children, showHeader = true, showFooter = true, headerProps = {} }) {
     return (
         <div className="min-h-screen grid grid-rows-[auto_1fr_auto] overflow-x-hidden">
             {showHeader && <Header {...headerProps} />}
-            <main className="min-h-0 min-w-0">{children}</main>
+            <main className="min-h-0 min-w-0">
+                <Suspense fallback={<RouteFallback />}>{children}</Suspense>
+            </main>
             {showFooter && <Footer />}
         </div>
     );
@@ -126,7 +137,14 @@ function App() {
                         </AppLayout>
                     }
                 />
-                <Route path={`/${staffPath}`} element={<StaffLogin />} />
+                <Route
+                    path={`/${staffPath}`}
+                    element={
+                        <Suspense fallback={<RouteFallback />}>
+                            <StaffLogin />
+                        </Suspense>
+                    }
+                />
                 <Route
                     path="/admin"
                     element={

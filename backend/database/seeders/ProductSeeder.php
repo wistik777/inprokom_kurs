@@ -5,123 +5,82 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class ProductSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
         $products = [
             [
-                'name' => 'Камера-извещатель',
-                'model' => 'WI1003002',
-                'description' => 'Компактная камера для видеонаблюдения с защитным корпусом.',
-                'price' => 20500.00,
-                'categories' => ['obektovaya-bezopasnost', 'videonablyudenie'],
+                'name' => 'Ежевика-Б-02',
+                'model' => 'ЕЖЕВИКА-Б-02',
+                'description' =>
+                    'Извещатель охранный линейный радиоволновый трибоэлектрический. Предназначен для обнаружения попыток преодоления заграждений (сетка АКЛ, сварные панели): пролезание, перелезание и разрушение. Принцип работы — трибоэлектрический эффект, адаптивный порог чувствительности для игнорирования ветровых нагрузок. Длина рубежа — до 200 м, температура −50…+50 °C, защита IP67, питание 12 В.',
+                'price' => 0,
+                'categories' => [
+                    'obektovaya-bezopasnost',
+                    Str::slug('Извещатели охранные, трибоэлектрические, пьезоэлектрические', '-', 'ru'),
+                ],
             ],
             [
-                'name' => 'Датчик движения',
-                'model' => 'MD2004011',
-                'description' => 'Инфракрасный датчик для помещений и складов.',
-                'price' => 6800.00,
-                'categories' => ['obektovaya-bezopasnost', 'pozharnaya-bezopasnost'],
+                'name' => 'КРОТ-В',
+                'model' => 'КРОТ-В',
+                'description' =>
+                    'Извещатель охранный линейный радиоволновый (противоподкопный). Сейсмический датчик для обнаружения подкопа под заграждением: чувствительный элемент заглубляется в грунт вдоль периметра. Игнорирует вибрации транспорта за счёт частотной фильтрации. Глубина установки 0,3–0,5 м, длина зоны 100 м, температура −50…+50 °C.',
+                'price' => 0,
+                'categories' => [
+                    'obektovaya-bezopasnost',
+                    Str::slug('Извещатели охранные, трибоэлектрические, пьезоэлектрические', '-', 'ru'),
+                ],
             ],
             [
-                'name' => 'Контроллер доступа',
-                'model' => 'AC3302004',
-                'description' => 'Контроллер для управления точками входа и учёта доступа.',
-                'price' => 15400.00,
-                'categories' => ['obektovaya-bezopasnost', 'kontrol-dostupa'],
+                'name' => 'Арбалет-Б-2012',
+                'model' => 'Арбалет-Б-2012',
+                'description' =>
+                    'Извещатель охранный линейный радиоволновый. Двухпозиционный СВЧ-извещатель для открытых площадок: формирует невидимую электромагнитную стену, высокая помехоустойчивость к осадкам и движению мелких животных. Дальность до 200 м, K-диапазон, питание 10–15 В.',
+                'price' => 0,
+                'categories' => [
+                    'obektovaya-bezopasnost',
+                    Str::slug('Извещатели охранные, радиолучевые', '-', 'ru'),
+                ],
             ],
             [
-                'name' => 'Сирена наружная',
-                'model' => 'SN5400188',
-                'description' => 'Уличная сирена с влагозащищённым корпусом.',
-                'price' => 3900.00,
-                'categories' => ['pozharnaya-bezopasnost', 'pozharnye-izveshchateli'],
+                'name' => 'Василёк-ОМ',
+                'model' => 'Василёк-ОМ',
+                'description' =>
+                    'Извещатель охранный линейный радиоволновый. Компактный радиолучевой извещатель для коротких участков периметра, ворот и калиток; дополняет трибоэлектрические рубежи на воротных проёмах. Дальность до 20 м, двухпозиционный, габариты блока 150×100×50 мм.',
+                'price' => 0,
+                'categories' => [
+                    'obektovaya-bezopasnost',
+                    Str::slug('Извещатели охранные, радиолучевые', '-', 'ru'),
+                ],
             ],
             [
-                'name' => 'Видеорегистратор',
-                'model' => 'VR9805021',
-                'description' => 'Гибридный регистратор для IP и аналоговых камер.',
-                'price' => 27990.00,
-                'categories' => ['videonablyudenie'],
-            ],
-            [
-                'name' => 'Блок питания',
-                'model' => 'PS1207780',
-                'description' => 'Стабилизированный блок питания для систем безопасности.',
-                'price' => 2500.00,
-                'categories' => ['kontraktnoe-proizvodstvo', 'elektronnye-moduli'],
-            ],
-            [
-                'name' => 'Считыватель карт',
-                'model' => 'RD4401200',
-                'description' => 'Бесконтактный считыватель карт и брелоков доступа.',
-                'price' => 7200.00,
-                'categories' => ['kontrol-dostupa'],
-            ],
-            [
-                'name' => 'Замок электромагнитный',
-                'model' => 'LM7700003',
-                'description' => 'Электромагнитный замок для офисных и промышленных дверей.',
-                'price' => 11400.00,
-                'categories' => ['kontrol-dostupa', 'obektovaya-bezopasnost'],
-            ],
-            [
-                'name' => 'Коммутатор PoE',
-                'model' => 'SW1609085',
-                'description' => 'Коммутатор с PoE-портами для камер и сетевых устройств.',
-                'price' => 18900.00,
-                'categories' => ['videonablyudenie'],
-            ],
-            [
-                'name' => 'Модуль GSM-оповещения',
-                'model' => 'GM2210044',
-                'description' => 'Модуль отправки тревожных уведомлений через GSM-канал.',
-                'price' => 9300.00,
-                'categories' => ['obektovaya-bezopasnost', 'ekologicheskaya-bezopasnost'],
-            ],
-            [
-                'name' => 'Панель оператора',
-                'model' => 'OP5512020',
-                'description' => 'Сенсорная панель для настройки и мониторинга оборудования.',
-                'price' => 42300.00,
-                'categories' => ['voennaya-tekhnika', 'nablyudatelnye-kompleksy'],
-            ],
-            [
-                'name' => 'Кабельный набор',
-                'model' => 'CB7719055',
-                'description' => 'Комплект кабелей и разъёмов для монтажа систем безопасности.',
-                'price' => 1500.00,
-                'categories' => ['kontraktnoe-proizvodstvo', 'elektronnye-moduli'],
+                'name' => 'Рапира-МТС',
+                'model' => 'Рапира-МТС',
+                'description' =>
+                    'Извещатель охранный линейный оптико-электронный. Создаёт невидимый ИК-барьер на участках, где невозможен монтаж кабеля на забор (открытые территории между зданиями). Встроенная защита от солнечной засветки. Дальность до 150 м, ИК-канал, ступенчатая регулировка.',
+                'price' => 0,
+                'categories' => [
+                    'obektovaya-bezopasnost',
+                    Str::slug('Извещатели охранные, оптические', '-', 'ru'),
+                ],
             ],
         ];
 
-        $extraProducts = [];
-        $seriesCount = 5;
+        $keptModels = array_column($products, 'model');
 
-        foreach ($products as $index => $baseProduct) {
-            for ($series = 1; $series <= $seriesCount; $series++) {
-                $extraProducts[] = [
-                    'name' => $baseProduct['name'] . ' серия ' . ($series + 1),
-                    'model' => $baseProduct['model'] . '-S' . ($series + 1),
-                    'description' => $baseProduct['description'] . ' Версия серии ' . ($series + 1) . '.',
-                    'price' => (float) $baseProduct['price'] + ($series * 350) + (($index % 4) * 120),
-                    'categories' => $baseProduct['categories'],
-                ];
-            }
-        }
+        Product::query()
+            ->whereNotIn('model', $keptModels)
+            ->update(['is_active' => false]);
 
-        $allProducts = array_merge($products, $extraProducts);
-
-        foreach ($allProducts as $product) {
+        foreach ($products as $product) {
             $categorySlugs = $product['categories'];
             unset($product['categories']);
 
             $product['image_url'] = '/img/card.svg';
+            $product['is_active'] = true;
 
             $createdProduct = Product::updateOrCreate(
                 ['model' => $product['model']],

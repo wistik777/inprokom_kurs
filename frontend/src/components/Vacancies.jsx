@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import VacancyCard from "./vacancies/VacancyCard";
-import VacancyResumeUpload, { validateResumeFile } from "./vacancies/VacancyResumeUpload";
 import { api, ApiError } from "../api/client";
 import { applyPhoneMask } from "../utils/phoneMask";
 import { markSkipSitePreloader } from "../utils/skipPreloader";
@@ -17,9 +16,7 @@ function Vacancies() {
         email: "",
         phone: "",
         position: "",
-        message: "",
     });
-    const [resumeFile, setResumeFile] = useState(null);
     const [submitted, setSubmitted] = useState(false);
     const [submitError, setSubmitError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -72,42 +69,27 @@ function Vacancies() {
         event.preventDefault();
         setSubmitError("");
 
-        if (!resumeFile) {
-            setSubmitError("Прикрепите файл резюме (TXT, PDF, DOC или DOCX, до 2 МБ)");
-            return;
-        }
-
-        const fileError = validateResumeFile(resumeFile);
-        if (fileError) {
-            setSubmitError(fileError);
-            return;
-        }
-
-        const body = new FormData();
-        body.append("name", form.name.trim());
-        body.append("email", form.email.trim());
-        body.append("phone", form.phone.trim());
-        body.append("position", form.position);
-        body.append("message", form.message.trim());
-        body.append("resume", resumeFile);
-
         setLoading(true);
 
         try {
-            await api.public.vacancyApplication(body);
+            await api.public.vacancyApplication({
+                name: form.name.trim(),
+                email: form.email.trim(),
+                phone: form.phone.trim(),
+                position: form.position,
+            });
 
             setSubmitted(true);
             markSkipSitePreloader();
-            setForm({ name: "", email: "", phone: "", position: "", message: "" });
-            setResumeFile(null);
+            setForm({ name: "", email: "", phone: "", position: "" });
             event.target.reset();
         } catch (err) {
             if (err instanceof ApiError) {
                 const serverError =
-                    err.errors?.resume?.[0] ||
                     err.errors?.name?.[0] ||
                     err.errors?.email?.[0] ||
                     err.errors?.phone?.[0] ||
+                    err.errors?.position?.[0] ||
                     err.message ||
                     "Не удалось отправить отклик";
                 setSubmitError(serverError);
@@ -118,11 +100,6 @@ function Vacancies() {
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleResumeChange = (file) => {
-        setResumeFile(file);
-        if (submitError) setSubmitError("");
     };
 
     const inputClass =
@@ -152,7 +129,7 @@ function Vacancies() {
                             onClick={scrollToForm}
                             className="btn-fill inline-flex h-[52px] min-w-[260px] items-center justify-center bg-white text-[14px] uppercase tracking-widest"
                         >
-                            <span className="relative z-10">Отправить резюме</span>
+                            <span className="relative z-10">Откликнуться</span>
                         </button>
                         <a
                             href="/about-company"
@@ -188,7 +165,7 @@ function Vacancies() {
                             <h2 className="text-[26px] font-bold uppercase text-[#181818] min-[426px]:text-[32px] lg:text-[36px]">Открытые позиции</h2>
                             <p className="mt-3 max-w-[640px] text-[17px] leading-relaxed text-[#4B4B4B]">
                                 Выберите направление, изучите задачи и отправьте отклик. Если подходящей вакансии
-                                нет — оставьте резюме в общей форме, мы свяжемся при появлении позиции.
+                                нет — оставьте отклик в общей форме, мы свяжемся при появлении позиции.
                             </p>
                         </div>
                         <p className="text-[14px] font-semibold uppercase tracking-widest text-[#FA4234]">
@@ -254,8 +231,8 @@ function Vacancies() {
                     <div>
                         <h2 className="text-[26px] font-bold uppercase leading-tight min-[426px]:text-[32px] lg:text-[36px]">Отклик на вакансию</h2>
                         <p className="mt-6 text-[18px] leading-relaxed text-white/85">
-                            Заполните форму — отдел кадров рассмотрит резюме и свяжется с вами по указанным
-                            контактам. Также можно направить резюме на{" "}
+                            Заполните форму — отдел кадров рассмотрит отклик и свяжется с вами по указанным
+                            контактам. Также можно написать на{" "}
                             <a href="mailto:info@inprokom.ru" className="text-[#FA4234] hover:underline">
                                 info@inprokom.ru
                             </a>{" "}
@@ -325,7 +302,7 @@ function Vacancies() {
                                         </option>
                                     ))}
                                     <option value="Другое / резерв" className="text-[#333]">
-                                        Другое / резюме в резерв
+                                        Другое / в резерв
                                     </option>
                                 </select>
                                 <span className="vacancy-select__arrow" aria-hidden="true">
@@ -341,18 +318,6 @@ function Vacancies() {
                                 </span>
                             </div>
                         </div>
-                        <textarea
-                            rows={4}
-                            placeholder="Сопроводительное письмо"
-                            value={form.message}
-                            onChange={handleChange("message")}
-                            className={inputClass}
-                        />
-                        <VacancyResumeUpload
-                            file={resumeFile}
-                            onChange={handleResumeChange}
-                            disabled={loading}
-                        />
                         <button
                             type="submit"
                             disabled={loading}
@@ -363,7 +328,7 @@ function Vacancies() {
                         {submitError && <p className="text-[16px] text-[#FA4234]">{submitError}</p>}
                         {submitted && !submitError && (
                             <p className="text-[16px] text-white/90">
-                                Спасибо! Ваш отклик с резюме принят, мы свяжемся с вами в ближайшее время.
+                                Спасибо! Ваш отклик принят, мы свяжемся с вами в ближайшее время.
                             </p>
                         )}
                     </form>

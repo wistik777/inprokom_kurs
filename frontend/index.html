@@ -3,7 +3,11 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>НПП Инпроком</title>
+        <title>НПП Инпроком — разработка и производство инженерной продукции</title>
+        <meta
+            name="description"
+            content="НПП «ИНПРОКОМ» — разработчик и производитель оборудования для безопасности и промышленности: охрана периметра, ОПУ, пожарные системы, контрактное производство. С 1992 года."
+        />
         <link rel="icon" href="/img/favicone.svg" type="image/svg+xml" />
         <style>
             #site-preloader {
@@ -47,9 +51,19 @@
             .site-preloader__bar-fill {
                 display: block;
                 height: 100%;
-                width: 35%;
+                width: 100%;
                 border-radius: inherit;
                 background: #fa4234;
+                transform-origin: left center;
+                transform: scaleX(0);
+                animation: site-preloader-progress 1.6s ease-out forwards;
+            }
+            @keyframes site-preloader-progress {
+                0% { transform: scaleX(0); }
+                18% { transform: scaleX(0.22); }
+                45% { transform: scaleX(0.48); }
+                72% { transform: scaleX(0.72); }
+                100% { transform: scaleX(0.88); }
             }
             body.site-loading {
                 overflow: hidden;

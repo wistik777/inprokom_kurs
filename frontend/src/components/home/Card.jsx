@@ -1,11 +1,24 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { getNewsUrl } from "../../data/newsItems";
 
-function Card({ id, title, description, date, variant = "activity", width, height }) {
+function Card({
+    id,
+    title,
+    description,
+    date,
+    href,
+    ctaLabel,
+    variant = "activity",
+    width,
+    height,
+}) {
     const isActivity = variant === "activity";
     const hasCustomSize = width > 0 && height > 0;
     const compact = hasCustomSize && width < 420;
     const newsHref = !isActivity && id ? getNewsUrl(id) : null;
+    const activityHref = isActivity ? href || null : null;
+    const targetHref = newsHref || activityHref;
 
     const sizeStyle = hasCustomSize
         ? { width, height, minWidth: width, flexShrink: 0 }
@@ -54,12 +67,9 @@ function Card({ id, title, description, date, variant = "activity", width, heigh
 
             <div className="relative z-10">
                 {isActivity ? (
-                    <button
-                        type="button"
-                        className="w-max border border-white/50 px-4 py-2 text-[12px] uppercase tracking-wide transition hover:bg-white hover:text-black cursor-pointer min-[426px]:px-6 min-[426px]:py-3 min-[426px]:text-[14px]"
-                    >
-                        Читать
-                    </button>
+                    <span className="inline-block w-max border border-white/50 px-4 py-2 text-[12px] uppercase tracking-wide transition group-hover:bg-white group-hover:text-black min-[426px]:px-6 min-[426px]:py-3 min-[426px]:text-[14px]">
+                        {ctaLabel || "Подробнее"}
+                    </span>
                 ) : (
                     <div className="flex items-center justify-between text-[12px] uppercase min-[426px]:text-[14px]">
                         <span>{date}</span>
@@ -70,11 +80,11 @@ function Card({ id, title, description, date, variant = "activity", width, heigh
         </article>
     );
 
-    if (newsHref) {
+    if (targetHref) {
         return (
-            <a href={newsHref} className="block h-full shrink-0" style={sizeStyle}>
+            <Link to={targetHref} className="group block h-full shrink-0" style={sizeStyle}>
                 {inner}
-            </a>
+            </Link>
         );
     }
 

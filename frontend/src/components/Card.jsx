@@ -24,14 +24,16 @@ const Card = ({ product }) => {
             }}
             className="group relative w-full max-w-[230px] cursor-pointer overflow-hidden border border-[#FA4234] bg-white p-3.5 min-h-[295px] max-[768px]:mx-auto"
         >
-            <div className="absolute inset-0 w-0 bg-[#FA4234] transition-all duration-500 ease-out group-hover:w-full" />
+            <div className="pointer-events-none absolute inset-0 origin-left scale-x-0 bg-[#FA4234] transition-transform duration-500 ease-out group-hover:scale-x-100" />
 
             <div className="relative z-10 h-full">
-                <div className="flex h-full flex-col items-center text-center transition-all duration-500 ease-out group-hover:opacity-0">
+                <div className="flex h-full flex-col items-center text-center transition-opacity duration-500 ease-out group-hover:opacity-0">
                     <div className="h-[126px] w-full">
                         <img
                             src={resolveAssetUrl(product.image_url)}
                             alt={product.name}
+                            loading="lazy"
+                            decoding="async"
                             className="h-full w-full object-contain"
                         />
                     </div>
@@ -46,7 +48,7 @@ const Card = ({ product }) => {
                     </p>
                 </div>
 
-                <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center px-3 text-center opacity-0 transition-all duration-500 ease-out group-hover:opacity-100">
+                <div className="absolute inset-0 flex h-full w-full flex-col items-center justify-center px-3 text-center opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100">
                     <h3 className="text-[18px] font-semibold leading-5 text-white">
                         {product.name}
                     </h3>
@@ -63,7 +65,7 @@ const Card = ({ product }) => {
                         <Link
                             to={productUrl}
                             onClick={(event) => event.stopPropagation()}
-                            className="cursor-pointer rounded-sm border border-white bg-white px-4 py-1.5 text-[11px] font-semibold text-[#FA4234] transition-all duration-500 ease-out hover:-translate-y-0.5 hover:bg-transparent hover:text-white"
+                            className="cursor-pointer rounded-sm border border-white bg-white px-4 py-1.5 text-[11px] font-semibold text-[#FA4234] transition-[transform,background-color,color] duration-300 ease-out hover:-translate-y-0.5 hover:bg-transparent hover:text-white"
                         >
                             ПОДРОБНЕЕ
                         </Link>

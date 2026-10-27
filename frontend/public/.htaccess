@@ -1,0 +1,23 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Laravel API и health-check → backend/public/index.php
+    RewriteRule ^api(?:/|$) backend/public/index.php [L,QSA]
+    RewriteRule ^up$ backend/public/index.php [L,QSA]
+
+    # Загрузки (картинки товаров и т.п.)
+    RewriteRule ^storage/(.*)$ backend/public/storage/$1 [L]
+
+    # Не трогаем существующие файлы и папки
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # PHP-скрипты (db-fix и т.п.)
+    RewriteRule \.php$ - [L]
+
+    # React SPA
+    RewriteRule ^index\.html$ - [L]
+    RewriteRule . /index.html [L]
+</IfModule>

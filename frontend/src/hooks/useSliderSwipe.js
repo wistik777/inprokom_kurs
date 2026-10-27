@@ -5,6 +5,8 @@ const SWIPE_THRESHOLD = 48;
 export function useSliderSwipe({ onPrev, onNext, page, maxPage }) {
     const viewportRef = useRef(null);
     const touchStartRef = useRef(null);
+    const dragRafRef = useRef(0);
+    const pendingOffsetRef = useRef(0);
     const [dragOffset, setDragOffset] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
 
@@ -26,9 +28,22 @@ export function useSliderSwipe({ onPrev, onNext, page, maxPage }) {
             return deltaX;
         };
 
+        const flushDragOffset = () => {
+            dragRafRef.current = 0;
+            setDragOffset(pendingOffsetRef.current);
+        };
+
+        const queueDragOffset = (value) => {
+            pendingOffsetRef.current = value;
+            if (!dragRafRef.current) {
+                dragRafRef.current = requestAnimationFrame(flushDragOffset);
+            }
+        };
+
         const startDrag = (clientX, clientY) => {
             touchStartRef.current = { x: clientX, y: clientY };
             setIsDragging(true);
+            pendingOffsetRef.current = 0;
             setDragOffset(0);
         };
 
@@ -43,7 +58,7 @@ export function useSliderSwipe({ onPrev, onNext, page, maxPage }) {
 
             if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 8) {
                 preventDefault?.();
-                setDragOffset(clampDrag(deltaX));
+                queueDragOffset(clampDrag(deltaX));
             }
         };
 
@@ -53,11 +68,17 @@ export function useSliderSwipe({ onPrev, onNext, page, maxPage }) {
                 return;
             }
 
+            if (dragRafRef.current) {
+                cancelAnimationFrame(dragRafRef.current);
+                dragRafRef.current = 0;
+            }
+
             const deltaX = clientX - start.x;
             const deltaY = clientY - start.y;
 
             touchStartRef.current = null;
             setIsDragging(false);
+            pendingOffsetRef.current = 0;
             setDragOffset(0);
 
             if (Math.abs(deltaX) < SWIPE_THRESHOLD || Math.abs(deltaX) <= Math.abs(deltaY)) {
@@ -73,8 +94,13 @@ export function useSliderSwipe({ onPrev, onNext, page, maxPage }) {
         };
 
         const cancelDrag = () => {
+            if (dragRafRef.current) {
+                cancelAnimationFrame(dragRafRef.current);
+                dragRafRef.current = 0;
+            }
             touchStartRef.current = null;
             setIsDragging(false);
+            pendingOffsetRef.current = 0;
             setDragOffset(0);
         };
 
@@ -107,6 +133,9 @@ export function useSliderSwipe({ onPrev, onNext, page, maxPage }) {
         element.addEventListener("touchcancel", cancelDrag, { passive: true });
 
         return () => {
+            if (dragRafRef.current) {
+                cancelAnimationFrame(dragRafRef.current);
+            }
             element.removeEventListener("touchstart", onTouchStart);
             element.removeEventListener("touchmove", onTouchMove);
             element.removeEventListener("touchend", onTouchEnd);

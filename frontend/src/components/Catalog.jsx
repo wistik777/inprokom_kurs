@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client';
 import Card from './Card';
-import CatalogProductsModal from './catalog/CatalogProductsModal';
 import CatalogFilters from './catalog/CatalogFilters';
 import { filterCatalogProducts } from '../utils/filterCatalogProducts';
+
+const CatalogProductsModal = React.lazy(() => import('./catalog/CatalogProductsModal'));
 
 const ITEMS_PER_PAGE = 16;
 
@@ -111,7 +112,7 @@ const Catalog = () => {
                                     <span className={`transition-transform duration-300 ${expandedCategory === index ? 'rotate-90 text-[#FA4234]' : 'text-black'}`}>&#9656;</span>
                                 </button>
 
-                                <ul className={`overflow-hidden pl-2 transition-all duration-300 ${expandedCategory === index ? 'max-h-36 pb-2' : 'max-h-0'}`}>
+                                <ul className={`overflow-y-auto pl-2 transition-all duration-300 ${expandedCategory === index ? 'max-h-[min(70vh,520px)] pb-2' : 'max-h-0 overflow-hidden'}`}>
                                     {(category.children || []).map((child) => (
                                         <li key={child.id || child.name}>
                                             <button
@@ -222,10 +223,12 @@ const Catalog = () => {
             </div>
 
             {isCatalogModalOpen && (
-                <CatalogProductsModal
-                    products={products}
-                    onClose={() => setIsCatalogModalOpen(false)}
-                />
+                <React.Suspense fallback={null}>
+                    <CatalogProductsModal
+                        products={products}
+                        onClose={() => setIsCatalogModalOpen(false)}
+                    />
+                </React.Suspense>
             )}
         </main>
     );

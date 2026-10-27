@@ -202,7 +202,9 @@ class ManagerController extends Controller
                 return array_merge($this->formatInboxItem($application), [
                     'position' => $application->position,
                     'resume_name' => $application->resume_original_name,
-                    'resume_url' => url('/api/v1/manager/vacancy-applications/'.$application->id.'/resume'),
+                    'resume_url' => $application->resume_path
+                        ? url('/api/v1/manager/vacancy-applications/'.$application->id.'/resume')
+                        : null,
                 ]);
             })
             ->values()
@@ -232,15 +234,13 @@ class ManagerController extends Controller
 
     public function downloadVacancyResume(VacancyApplication $application)
     {
-
-
-        if (!Storage::disk('local')->exists($application->resume_path)) {
+        if (! $application->resume_path || ! Storage::disk('local')->exists($application->resume_path)) {
             abort(404);
         }
 
         return Storage::disk('local')->download(
             $application->resume_path,
-            $application->resume_original_name
+            $application->resume_original_name ?: 'resume'
         );
     }
 

@@ -21,5 +21,24 @@ export default defineConfig(({ mode }) => {
                 },
             },
         },
+        build: {
+            target: 'es2020',
+            cssCodeSplit: true,
+            sourcemap: false,
+            chunkSizeWarningLimit: 900,
+            rollupOptions: {
+                output: {
+                    manualChunks(id) {
+                        if (!id.includes('node_modules')) {
+                            return undefined;
+                        }
+                        if (id.includes('react-dom') || id.includes('/react/') || id.includes('react-router')) {
+                            return 'vendor-react';
+                        }
+                        return undefined;
+                    },
+                },
+            },
+        },
     };
 });

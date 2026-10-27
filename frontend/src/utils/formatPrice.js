@@ -1,8 +1,8 @@
 export function formatPrice(value) {
     const numeric = Number(value);
 
-    if (!Number.isFinite(numeric)) {
-        return '—';
+    if (!Number.isFinite(numeric) || numeric <= 0) {
+        return 'По запросу';
     }
 
     return new Intl.NumberFormat('ru-RU', {

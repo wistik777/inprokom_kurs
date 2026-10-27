@@ -357,7 +357,7 @@ function ManagerInbox() {
 
                 <InboxSection
                     title="Отклики на вакансии"
-                    description="Заявки с резюме со страницы «Вакансии»"
+                    description="Заявки со страницы «Вакансии»"
                     items={vacancies}
                     type="vacancy"
                     onStatusChange={handleVacancyStatus}

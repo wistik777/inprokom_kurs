@@ -57,8 +57,8 @@ export const api = {
         categories: () => apiRequest('/categories'),
         vacancies: () => apiRequest('/vacancies'),
         contactMessage: (payload) => apiRequest('/contact-messages', { method: 'POST', body: payload }),
-        vacancyApplication: (formData) =>
-            apiRequest('/vacancy-applications', { method: 'POST', formData }),
+        vacancyApplication: (payload) =>
+            apiRequest('/vacancy-applications', { method: 'POST', body: payload }),
         newsletterSubscribe: (payload) =>
             apiRequest('/newsletter/subscribe', { method: 'POST', body: payload }),
     },

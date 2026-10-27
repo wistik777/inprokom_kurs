@@ -3,7 +3,7 @@ import Card from "./Card";
 import { computeSliderMetrics } from "../../hooks/useSliderMetrics";
 import { useSliderSwipe } from "../../hooks/useSliderSwipe";
 
-const SLIDER_TRANSITION = "transform 1.4s cubic-bezier(0.16, 1, 0.3, 1)";
+const SLIDER_TRANSITION = "transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)";
 
 function formatPage(current, total) {
     return `${String(current).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
@@ -33,11 +33,9 @@ function CardSlider({
 
         const observer = new ResizeObserver(measure);
         observer.observe(element);
-        window.addEventListener("resize", measure);
 
         return () => {
             observer.disconnect();
-            window.removeEventListener("resize", measure);
         };
     }, []);
 
@@ -87,7 +85,7 @@ function CardSlider({
                 style={{ minHeight: cardHeight > 0 ? `${cardHeight}px` : undefined }}
             >
                 <div
-                    className="flex will-change-transform"
+                    className={`flex ${isDragging ? "will-change-transform" : ""}`}
                     style={{
                         gap: `${gap}px`,
                         transform: `translate3d(-${Math.max(0, offset - dragOffset)}px, 0, 0)`,

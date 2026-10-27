@@ -63,11 +63,12 @@ function Contacts() {
                 className="hero-under-header bg-cover bg-center"
                 style={{ backgroundImage: "url('/img/contact.png')" }}
             >
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-md" />
+                <div className="absolute inset-0 bg-black/50" />
                 <div className="relative z-10 page-container w-full py-8 min-[426px]:py-10">
                     <h1 className="section-title text-white">Контакты</h1>
                     <p className="mt-3 max-w-[720px] text-[16px] text-white/90 min-[426px]:text-[20px]">
-                        Свяжитесь с нами, чтобы узнать подробнее об услугах
+                        Опишите задачу, укажите объект, требуемое оборудование или приложите техническое задание —
+                        подготовим консультацию или расчёт проекта.
                     </p>
                 </div>
             </section>

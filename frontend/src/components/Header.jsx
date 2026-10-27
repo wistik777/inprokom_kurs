@@ -37,18 +37,41 @@ function Header({ adminMode = false, overlapHero = false, managerPreviewMode = f
     }, []);
 
     useEffect(() => {
-        const handleScroll = () => {
+        let rafId = 0;
+        let lastHidden = false;
+
+        const applyScrollState = () => {
+            rafId = 0;
             if (window.innerWidth <= MOBILE_BREAKPOINT) {
-                setHideMenuRow(false);
+                if (lastHidden) {
+                    lastHidden = false;
+                    setHideMenuRow(false);
+                }
                 return;
             }
-            setHideMenuRow(window.scrollY > 80);
+
+            const shouldHide = window.scrollY > 80;
+            if (shouldHide !== lastHidden) {
+                lastHidden = shouldHide;
+                setHideMenuRow(shouldHide);
+            }
         };
 
-        handleScroll();
+        const handleScroll = () => {
+            if (!rafId) {
+                rafId = requestAnimationFrame(applyScrollState);
+            }
+        };
+
+        applyScrollState();
         window.addEventListener("scroll", handleScroll, { passive: true });
 
-        return () => window.removeEventListener("scroll", handleScroll);
+        return () => {
+            if (rafId) {
+                cancelAnimationFrame(rafId);
+            }
+            window.removeEventListener("scroll", handleScroll);
+        };
     }, []);
 
     useEffect(() => {
@@ -132,7 +155,7 @@ function Header({ adminMode = false, overlapHero = false, managerPreviewMode = f
 
     return (
         <>
-            <div className={`w-full transition-all duration-300 ${spacerHeight}`} />
+            <div className={`w-full transition-[height] duration-300 ease-out ${spacerHeight}`} />
 
             <nav
                 className={`fixed inset-x-0 top-0 z-50 bg-white ${
@@ -217,7 +240,7 @@ function Header({ adminMode = false, overlapHero = false, managerPreviewMode = f
                     >
                         <div className="header-contacts-slot pointer-events-none relative hidden min-h-[32px] min-w-[820px] min-[1025px]:block">
                             <div
-                                className={`absolute inset-0 flex items-center gap-10 transition-all duration-300 ${
+                                className={`absolute inset-0 flex items-center gap-10 transition-[opacity,transform] duration-300 ease-out ${
                                     hideMenuRow
                                         ? "-translate-y-2 opacity-0"
                                         : "translate-y-0 opacity-100"
@@ -233,23 +256,27 @@ function Header({ adminMode = false, overlapHero = false, managerPreviewMode = f
                 <hr className="mt-3 hidden min-[769px]:block" />
 
                 <div
-                    className={`header-desktop-nav-wrap hidden overflow-hidden transition-all duration-300 min-[769px]:block ${
-                        hideMenuRow ? "max-h-0 opacity-0" : "mt-[20px] max-h-[96px] opacity-100"
-                    }`}
+                    className={`header-desktop-nav-wrap hidden min-[769px]:grid ${
+                        hideMenuRow
+                            ? "mt-0 grid-rows-[0fr] opacity-0"
+                            : "mt-[20px] grid-rows-[1fr] opacity-100"
+                    } overflow-hidden transition-[grid-template-rows,opacity,margin] duration-300 ease-out`}
                 >
-                    <div className="header-desktop-nav mb-[20px] flex justify-center gap-[72px] text-[21px] decoration-0 [&_a]:transition-all [&_a]:duration-300 [&_a]:ease-in-out [&_a:hover]:text-[#FA4234]">
-                        {navLinks.map((link) => (
-                            <Link
-                                key={`bottom-${link.href}`}
-                                to={link.href}
-                                className={getNavLinkClass(link.href, currentPath)}
-                                aria-current={linkIsActive(link.href) ? "page" : undefined}
-                            >
-                                {link.label}
-                            </Link>
-                        ))}
+                    <div className="min-h-0 overflow-hidden">
+                        <div className="header-desktop-nav mb-[20px] flex justify-center gap-[72px] text-[21px] decoration-0 [&_a]:transition-colors [&_a]:duration-300 [&_a]:ease-in-out [&_a:hover]:text-[#FA4234]">
+                            {navLinks.map((link) => (
+                                <Link
+                                    key={`bottom-${link.href}`}
+                                    to={link.href}
+                                    className={getNavLinkClass(link.href, currentPath)}
+                                    aria-current={linkIsActive(link.href) ? "page" : undefined}
+                                >
+                                    {link.label}
+                                </Link>
+                            ))}
+                        </div>
+                        <hr className="mt-3 border-[#E8E8E8]" />
                     </div>
-                    <hr className="mt-3 border-[#E8E8E8]" />
                 </div>
 
             </nav>
